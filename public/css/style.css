@@ -1,0 +1,24 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+.kanban-wrapper h5 {
+    margin-bottom: 10px;
+}
+
+.kanban-column {
+    min-height: 260px;
+    background: #f8f9fa;
+    border: 1px dashed #cfd4da;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.kanban-card {
+    background: white;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    cursor: grab;
+}
