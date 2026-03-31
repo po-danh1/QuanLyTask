@@ -7,6 +7,7 @@ function getPriorityColor(priority) {
 function getStatusBadge(status) {
   if (status === "completed") return "success";
   if (status === "progress") return "primary";
+  if (status === "reviewing") return "info";
   return "secondary";
 }
 
@@ -38,31 +39,32 @@ function getDeadlineInfo(deadline, status) {
   if (diffHours < 0) {
     return {
       badge: "danger",
-      text: `${formatDateTime(deadline)} (Overdue)`
+      text: `🔴 Overdue`
     };
   }
 
   if (diffHours <= 24) {
     return {
       badge: "warning",
-      text: `${formatDateTime(deadline)} (Due soon)`
+      text: `🟡 Due Soon`
     };
   }
 
   return {
     badge: "success",
-    text: formatDateTime(deadline)
+    text: "✅"
   };
 }
 
 function renderTasks(tasks) {
-  const table = document.getElementById("taskTable");
+  const table = document.getElementById("taskTableBody");
+  if (!table) return;
   table.innerHTML = "";
 
   if (!tasks || tasks.length === 0) {
     table.innerHTML = `
       <tr>
-        <td colspan="6" class="text-center text-muted">No tasks found</td>
+        <td colspan="7" class="text-center text-muted p-4">No tasks found</td>
       </tr>
     `;
     return;
@@ -70,42 +72,46 @@ function renderTasks(tasks) {
 
   tasks.forEach((task) => {
     const deadlineInfo = getDeadlineInfo(task.deadline, task.status);
+    const isReviewing = task.status === "reviewing";
+    
+    // Nút hành động thông minh cho Approval Workflow
+    let actionBtn = `<button class="btn btn-outline-success btn-sm btn-premium" onclick="markCompleted('${task._id}')" title="Hoàn thành">✅</button>`;
+    if (task.status === "progress") {
+      actionBtn = `<button class="btn btn-outline-info btn-sm btn-premium" onclick="requestReview('${task._id}')" title="Gửi duyệt">📤</button>`;
+    } else if (task.status === "reviewing") {
+      actionBtn = `<button class="btn btn-success btn-sm btn-premium" onclick="approveTask('${task._id}')" title="Duyệt">✔️</button>`;
+    }
 
     table.innerHTML += `
-      <tr>
-        <td>${task.title || ""}</td>
-        <td>${task.description || ""}</td>
+      <tr data-id="${task._id}">
+        <td><input type="checkbox" class="task-checkbox" value="${task._id}" onchange="updateSelection()"></td>
         <td>
-          <span class="badge bg-${getPriorityColor(task.priority)} text-uppercase">
-            ${task.priority || "low"}
+          <div class="fw-bold text-primary">${task.title || ""}</div>
+          <div class="small text-muted">${task.teamId ? (task.teamId.name || 'Team') : 'Personal'}</div>
+        </td>
+        <td class="text-muted small">${task.description || ""}</td>
+        <td>
+          <span class="badge badge-premium bg-${getPriorityColor(task.priority)}">
+            ${task.priority ? task.priority.toUpperCase() : "LOW"}
           </span>
         </td>
         <td>
-          ${
-            task.deadline
-              ? `<span class="badge bg-${deadlineInfo.badge}">${deadlineInfo.text}</span>`
-              : ""
-          }
+          <div class="d-flex flex-column gap-1">
+            <span class="small fw-medium">${task.deadline ? formatDateTime(task.deadline) : "—"}</span>
+            ${task.deadline ? `<span class="badge bg-${deadlineInfo.badge} badge-premium" style="width: fit-content;">${deadlineInfo.text}</span>` : ""}
+          </div>
         </td>
         <td>
-          <span class="badge bg-${getStatusBadge(task.status)}">
-            ${task.status || "pending"}
+          <span class="badge badge-premium bg-${getStatusBadge(task.status)}">
+            ${task.status ? task.status.toUpperCase().replace('_', ' ') : "PENDING"}
           </span>
         </td>
         <td>
-          <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-info btn-sm text-white" onclick="viewTask('${task._id}')">
-              View
-            </button>
-            <button class="btn btn-warning btn-sm text-dark" onclick="editTask('${task._id}')">
-              Edit
-            </button>
-            <button class="btn btn-success btn-sm" onclick="markCompleted('${task._id}')">
-              Complete
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="deleteTask('${task._id}')">
-              Delete
-            </button>
+          <div class="d-flex gap-1 flex-wrap">
+            <button class="btn btn-outline-info btn-sm btn-premium" onclick="viewTask('${task._id}')" title="Chi tiết">👁️</button>
+            <button class="btn btn-outline-warning btn-sm btn-premium" onclick="editTask('${task._id}')" title="Sửa">✏️</button>
+            ${actionBtn}
+            <button class="btn btn-outline-danger btn-sm btn-premium" onclick="deleteTask('${task._id}')" title="Xóa">🗑️</button>
           </div>
         </td>
       </tr>

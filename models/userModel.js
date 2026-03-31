@@ -12,7 +12,21 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true
+    required: function() { return !this.googleId; } // Mật khẩu bắt buộc nếu không đăng nhập bằng Google
+  },
+  googleId: {
+    type: String,
+    sparse: true,
+    unique: true
+  },
+  avatar: {
+    type: String,
+    default: ""
+  },
+  role: {
+    type: String,
+    enum: ["admin", "user"],
+    default: "user"
   }
 });
 

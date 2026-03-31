@@ -64,3 +64,31 @@ function logout() {
   localStorage.removeItem("token");
   window.location.href = "login.html";
 }
+
+async function handleCredentialResponse(response) {
+  try {
+    const res = await fetch("/api/auth/google", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ credential: response.credential })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast(data.message || "Google Login failed", "danger");
+      return;
+    }
+
+    localStorage.setItem("token", data.token);
+    showToast("Đăng nhập bằng Google thành công!", "success");
+    setTimeout(() => {
+      window.location.href = "index.html";
+    }, 800);
+  } catch (error) {
+    showToast("Lỗi kết nối", "danger");
+    console.error("Lỗi Google Auth:", error);
+  }
+}

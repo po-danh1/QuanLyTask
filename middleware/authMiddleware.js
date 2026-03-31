@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-module.exports = (req, res, next) => {
+const auth = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -20,3 +20,19 @@ module.exports = (req, res, next) => {
     return res.status(401).json({ message: "Invalid token" });
   }
 };
+
+// Authorization: Kiểm tra vai trò
+const authorize = (roles = []) => {
+  if (typeof roles === 'string') {
+    roles = [roles];
+  }
+
+  return (req, res, next) => {
+    if (roles.length && !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Forbidden: You don't have access" });
+    }
+    next();
+  };
+};
+
+module.exports = { auth, authorize };

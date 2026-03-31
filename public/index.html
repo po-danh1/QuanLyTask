@@ -9,269 +9,417 @@
     rel="stylesheet"
   />
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-light">
-  <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="text-center m-0 flex-grow-1">Smart Task Manager</h1>
-      <button class="btn btn-outline-danger ms-3" onclick="logout()">Logout</button>
+  <!-- AI MAGIC MODAL (NEW ID TO FIX VISIBILITY) -->
+  <div class="modal fade" id="aiMagicModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4 bg-white">
+        <div class="modal-header border-bottom p-4">
+          <h5 class="modal-title fw-bold text-primary">✨ AI Project Roadmapper</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4 bg-white" style="display: block !important; visibility: visible !important; min-height: 300px;">
+          <!-- STEP 1: INPUT -->
+          <div id="aiInputStep" style="display: block !important;">
+            <h6 class="fw-bold mb-3 text-dark">Dự án tiếp theo của bạn là gì?</h6>
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted">Mục tiêu dự án</label>
+              <input type="text" id="aiGoal" class="form-control form-control-lg border-primary" placeholder="Ví dụ: Thiết kế App bán hàng" style="color: black !important;">
+            </div>
+            <div class="mb-4">
+              <label class="form-label small fw-bold text-muted">Thời gian (Tùy chọn)</label>
+              <input type="text" id="aiTimeframe" class="form-control" placeholder="Ví dụ: 1 tháng">
+            </div>
+            <button class="btn btn-primary w-100 py-3 fw-bold" onclick="handleGenerateRoadmap()">
+              🚀 Lập kế hoạch với Gemini AI
+            </button>
+          </div>
+
+          <!-- STEP 2: RESULT -->
+          <div id="aiResultStep" class="d-none" style="display: none;">
+             <div class="d-flex justify-content-between align-items-center mb-3">
+               <h6 class="fw-bold m-0 text-dark">Lộ trình đề xuất:</h6>
+               <span class="badge bg-info p-2" id="aiStatusText">0 Task</span>
+             </div>
+             <div id="aiRoadmapList" class="row g-2 mb-4" style="max-height: 400px; overflow-y: auto;">
+               <!-- Tasks go here -->
+             </div>
+             <div class="d-flex gap-2">
+               <button class="btn btn-success flex-grow-1 py-3 fw-bold" onclick="handleApplyRoadmap()">✅ Áp dụng</button>
+               <button class="btn btn-light flex-grow-1" onclick="resetAIModal()">Quay lại</button>
+             </div>
+          </div>
+
+          <!-- STEP 3: LOADING -->
+          <div id="aiLoading" class="text-center py-5 d-none" style="display: none;">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p class="fw-bold text-dark">Gemini AI đang suy nghĩ...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Modern Navbar -->
+  <nav class="modern-nav mb-4">
+    <div class="container-xl d-flex justify-content-between align-items-center py-2">
+      <div class="d-flex align-items-center">
+        <div class="bg-primary rounded-circle p-2 me-2 shadow-sm">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </div>
+        <h4 class="m-0 fw-bold text-primary">SmartTask</h4>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-info btn-premium" type="button" data-bs-toggle="collapse" data-bs-target="#analyticsDashboard" onclick="initAnalytics()">
+          <span class="me-1">📊</span> Dashboard
+        </button>
+        <button class="btn btn-outline-primary btn-premium" data-bs-toggle="modal" data-bs-target="#teamModal" onclick="loadTeams()">
+          <span class="me-1">👥</span> Teams
+        </button>
+        <button class="btn btn-outline-danger btn-premium ms-2" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-xl py-2">
+    <!-- Analytics Dashboard -->
+    <div class="collapse mb-4" id="analyticsDashboard">
+      <div class="card card-premium shadow-sm border-0">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="m-0 fw-bold text-primary">📊 Thống kê hiệu suất</h5>
+            <button class="btn btn-sm btn-light btn-premium" onclick="initAnalytics()">🔄 Làm mới</button>
+          </div>
+          <div class="row g-4">
+            <div class="col-md-6">
+              <div style="height: 250px;">
+                <canvas id="statusChart"></canvas>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div style="height: 250px;">
+                <canvas id="priorityChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <!-- Banner thông báo deadline -->
+    <div id="deadlineAlertBanner" class="alert alert-warning border-0 shadow-sm d-none mb-4 rounded-4" role="alert">
+      <div class="d-flex justify-content-between align-items-start">
+        <div id="deadlineAlertContent" class="fw-medium"></div>
+        <button type="button" class="btn-close ms-3 flex-shrink-0" onclick="document.getElementById('deadlineAlertBanner').classList.add('d-none')"></button>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
     <div class="row g-3 mb-4">
       <div class="col-md-3">
-        <div class="card text-bg-primary shadow-sm border-0">
-          <div class="card-body text-center">
-            <h5 class="card-title">Total Tasks</h5>
-            <h2 id="totalTasks">0</h2>
+        <div class="card border-0 shadow-sm rounded-4 p-2 text-primary" style="background: #eef2ff;">
+          <div class="card-body d-flex align-items-center">
+            <div class="bg-white rounded-3 p-3 shadow-sm me-3">🚀</div>
+            <div>
+              <div class="small fw-bold opacity-75">Total Tasks</div>
+              <h3 id="totalTasks" class="m-0 fw-bold">0</h3>
+            </div>
           </div>
         </div>
       </div>
-
       <div class="col-md-3">
-        <div class="card text-bg-success shadow-sm border-0">
-          <div class="card-body text-center">
-            <h5 class="card-title">Completed</h5>
-            <h2 id="completedTasks">0</h2>
+        <div class="card border-0 shadow-sm rounded-4 p-2 text-success" style="background: #f0fdf4;">
+          <div class="card-body d-flex align-items-center">
+            <div class="bg-white rounded-3 p-3 shadow-sm me-3">✅</div>
+            <div>
+              <div class="small fw-bold opacity-75">Completed</div>
+              <h3 id="completedTasks" class="m-0 fw-bold">0</h3>
+            </div>
           </div>
         </div>
       </div>
-
       <div class="col-md-3">
-        <div class="card text-bg-warning shadow-sm border-0">
-          <div class="card-body text-center">
-            <h5 class="card-title">Pending</h5>
-            <h2 id="pendingTasks">0</h2>
+        <div class="card border-0 shadow-sm rounded-4 p-2 text-warning" style="background: #fffbeb;">
+          <div class="card-body d-flex align-items-center">
+            <div class="bg-white rounded-3 p-3 shadow-sm me-3">⏳</div>
+            <div>
+              <div class="small fw-bold opacity-75">Pending</div>
+              <h3 id="pendingTasks" class="m-0 fw-bold">0</h3>
+            </div>
           </div>
         </div>
       </div>
-
       <div class="col-md-3">
-        <div class="card text-bg-danger shadow-sm border-0">
-          <div class="card-body text-center">
-            <h5 class="card-title">Overdue</h5>
-            <h2 id="overdueTasks">0</h2>
+        <div class="card border-0 shadow-sm rounded-4 p-2 text-danger" style="background: #fef2f2;">
+          <div class="card-body d-flex align-items-center">
+            <div class="bg-white rounded-3 p-3 shadow-sm me-3">⚠️</div>
+            <div>
+              <div class="small fw-bold opacity-75">Overdue</div>
+              <h3 id="overdueTasks" class="m-0 fw-bold">0</h3>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card shadow-sm border-0 mb-4">
-      <div class="card-body">
-        <h4 class="mb-3">Add Task</h4>
+    <!-- Add Task Card -->
+    <div class="card-premium mb-4">
+      <div class="card-body p-4">
+        <h5 class="mb-4 text-primary fw-bold">➕ Add New Task</h5>
         <div class="row g-3">
           <div class="col-md-4">
             <input id="title" class="form-control" placeholder="Title" />
           </div>
-
-          <div class="col-md-3">
+          <div class="col-md-4">
             <input id="description" class="form-control" placeholder="Description" />
           </div>
-
           <div class="col-md-2">
             <select id="priority" class="form-select">
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+              <option value="low">Low Priority</option>
+              <option value="medium">Medium Priority</option>
+              <option value="high">High Priority</option>
             </select>
           </div>
-
           <div class="col-md-2">
-            <input id="deadline" type="datetime-local" class="form-control" />
+            <input type="datetime-local" id="deadline" class="form-control" />
           </div>
-
-          <div class="col-md-1">
-            <button class="btn btn-primary w-100" onclick="addTask()">Add</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card shadow-sm border-0 mb-4">
-      <div class="card-body">
-        <div class="row g-3">
           <div class="col-md-3">
-            <input id="search" class="form-control" placeholder="Search task" />
-          </div>
-
-          <div class="col-md-2">
-            <select id="filterPriority" class="form-select">
-              <option value="">All Priority</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+            <select id="taskTeam" class="form-select" onchange="loadTeamMembers()">
+              <option value="">Personal Task (No Team)</option>
             </select>
           </div>
-
-          <div class="col-md-2">
-            <select id="filterStatus" class="form-select">
-              <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-
           <div class="col-md-3">
-            <select id="sortBy" class="form-select">
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="deadline_asc">Nearest Deadline</option>
-              <option value="priority_desc">Highest Priority</option>
+            <select id="taskAssignee" class="form-select">
+              <option value="">Assignee (Self)</option>
             </select>
           </div>
-
-          <div class="col-md-1">
-            <button class="btn btn-success w-100" onclick="applyFilter()">Filter</button>
+          <div class="col-md-2 offset-md-2">
+            <button class="btn btn-primary btn-premium w-100" onclick="addTask()">Add Task</button>
           </div>
-
-          <div class="col-md-1">
-            <button class="btn btn-secondary w-100" onclick="resetFilter()">Reset</button>
+          <div class="col-md-2">
+            <button class="btn btn-dark btn-premium w-100 shadow-sm border-0" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);" data-bs-toggle="modal" data-bs-target="#aiMagicModal">
+              ✨ AI Roadmap
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card shadow-sm border-0 mb-4">
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-dark">
-              <tr>
-                <th>Title</th>
-                <th>Description</th>
-                <th>Priority</th>
-                <th>Deadline</th>
-                <th>Status</th>
-                <th width="320">Action</th>
-              </tr>
-            </thead>
-            <tbody id="taskTable"></tbody>
-          </table>
+    <!-- Bulk Action Bar (Hidden by default) -->
+    <div id="bulkActionBar" class="alert alert-info border-0 shadow-lg d-none mb-4 rounded-4 py-3 px-4 animate__animated animate__fadeInUp" style="position: sticky; bottom: 20px; z-index: 1001;">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="fw-bold">
+          <span id="selectedCount">0</span> tasks selected
         </div>
-      </div>
-    </div>
-
-    <div class="d-flex justify-content-center align-items-center gap-3 mb-5">
-      <button class="btn btn-outline-secondary" onclick="prevPage()">Prev</button>
-      <span id="pageNumber" class="fw-bold">Page 1</span>
-      <button class="btn btn-outline-secondary" onclick="nextPage()">Next</button>
-    </div>
-
-    <h2 class="mb-3">Kanban Board</h2>
-    <div class="row g-3">
-      <div class="col-md-4">
-        <div class="kanban-wrapper">
-          <h5>Pending</h5>
-          <div
-            id="pending"
-            class="kanban-column"
-            ondrop="drop(event,'pending')"
-            ondragover="allowDrop(event)"
-          ></div>
-        </div>
-      </div>
-
-      <div class="col-md-4">
-        <div class="kanban-wrapper">
-          <h5>In Progress</h5>
-          <div
-            id="progress"
-            class="kanban-column"
-            ondrop="drop(event,'progress')"
-            ondragover="allowDrop(event)"
-          ></div>
-        </div>
-      </div>
-
-      <div class="col-md-4">
-        <div class="kanban-wrapper">
-          <h5>Completed</h5>
-          <div
-            id="completed"
-            class="kanban-column"
-            ondrop="drop(event,'completed')"
-            ondragover="allowDrop(event)"
-          ></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="detailModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Task Detail</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <p><strong>Title:</strong> <span id="detailTitle"></span></p>
-          <p><strong>Description:</strong> <span id="detailDescription"></span></p>
-          <p><strong>Priority:</strong> <span id="detailPriority"></span></p>
-          <p><strong>Status:</strong> <span id="detailStatus"></span></p>
-          <p><strong>Deadline:</strong> <span id="detailDeadline"></span></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Edit Task</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" id="editId" />
-
-          <label class="form-label">Title</label>
-          <input id="editTitle" class="form-control mb-3" />
-
-          <label class="form-label">Description</label>
-          <input id="editDescription" class="form-control mb-3" />
-
-          <label class="form-label">Priority</label>
-          <select id="editPriority" class="form-select mb-3">
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-
-          <label class="form-label">Status</label>
-          <select id="editStatus" class="form-select mb-3">
+        <div class="d-flex gap-2">
+          <select id="bulkStatus" class="form-select form-select-sm" style="width: 150px;">
+            <option value="">Change Status...</option>
             <option value="pending">Pending</option>
             <option value="progress">In Progress</option>
-            <option value="completed">Completed</option>
+            <option value="reviewing">Request Review</option>
+            <option value="completed">Completed (Approve)</option>
           </select>
-
-          <label class="form-label">Deadline</label>
-          <input id="editDeadline" type="datetime-local" class="form-control" />
+          <button class="btn btn-sm btn-primary" onclick="handleBulkStatus()">Apply</button>
+          <button class="btn btn-sm btn-danger" onclick="handleBulkDelete()">Delete Selected</button>
+          <button class="btn btn-sm btn-light" onclick="clearSelection()">Cancel</button>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary" onclick="updateTask()">Save</button>
+      </div>
+    </div>
+
+    <!-- Views Tabs -->
+    <ul class="nav nav-tabs mb-4 border-0 gap-2" id="taskViews" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active btn-premium border-0" id="table-view-tab" data-bs-toggle="tab" data-bs-target="#table-view" type="button">📋 Table View</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link btn-premium border-0" id="kanban-view-tab" data-bs-toggle="tab" data-bs-target="#kanban-view" type="button">📊 Kanban Board</button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="taskViewsContent">
+      <div class="tab-pane fade show active" id="table-view">
+        <div class="card-premium">
+          <div class="card-body p-0">
+            <div class="p-3 border-bottom bg-white rounded-top-4 d-flex gap-2">
+              <div class="input-group" style="max-width: 300px;">
+                <span class="input-group-text bg-transparent border-0">🔍</span>
+                <input type="text" id="search" class="form-control border-0" placeholder="Search tasks..." oninput="loadTasks()">
+              </div>
+              <select id="filterPriority" class="form-select border-0 bg-light" onchange="loadTasks()" style="width: 150px;">
+                <option value="">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+              <select id="filterStatus" class="form-select border-0 bg-light" onchange="loadTasks()" style="width: 150px;">
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+              <select id="sortBy" class="form-select border-0 bg-light" onchange="loadTasks()" style="width: 150px;">
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="deadline_asc">Deadline Asc</option>
+              </select>
+              <button class="btn btn-primary" onclick="loadTasks()">Filter</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-modern mb-0" id="taskTable">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)"></th>
+                    <th>Task Details</th>
+                    <th>Description</th>
+                    <th>Priority</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="taskTableBody"></tbody>
+              </table>
+            </div>
+            <!-- Pagination Controls -->
+            <div class="p-3 bg-white rounded-bottom-4 d-flex justify-content-between align-items-center border-top">
+              <button class="btn btn-sm btn-outline-primary btn-premium" onclick="prevPage()">PREV</button>
+              <span id="pageNumber" class="fw-bold text-muted small">Page 1</span>
+              <button class="btn btn-sm btn-outline-primary btn-premium" onclick="nextPage()">NEXT</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="kanban-view">
+        <div class="row kanban-wrapper">
+          <div class="col-md-4">
+            <h5>⏳ Pending</h5>
+            <div id="pending" class="kanban-column" ondragover="allowDrop(event)" ondrop="drop(event, 'pending')"></div>
+          </div>
+          <div class="col-md-4">
+            <h5>🚀 In Progress</h5>
+            <div id="progress" class="kanban-column" ondragover="allowDrop(event)" ondrop="drop(event, 'progress')"></div>
+          </div>
+          <div class="col-md-4">
+            <h5>✅ Completed</h5>
+            <div id="completed" class="kanban-column" ondragover="allowDrop(event)" ondrop="drop(event, 'completed')"></div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="toast-container position-fixed top-0 end-0 p-3">
-    <div id="appToast" class="toast align-items-center text-bg-dark border-0" role="alert">
-      <div class="d-flex">
-        <div class="toast-body" id="toastMessage">
-          Thông báo
+  <!-- Team Management Modal -->
+  <div class="modal fade" id="teamModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content card-premium">
+        <div class="modal-header border-0 p-4">
+          <h5 class="modal-title fw-bold text-primary">👥 Team Management</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        <div class="modal-body p-4 pt-0">
+          <div class="mb-4">
+            <label class="form-label fw-bold">Create New Team</label>
+            <div class="input-group">
+              <input type="text" id="newTeamName" class="form-control" placeholder="Enter team name...">
+              <button class="btn btn-primary" onclick="handleCreateTeam()">Create Team</button>
+            </div>
+          </div>
+          <div id="teamList" class="row g-3"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/ui.js"></script>
-  <script src="js/kanban.js"></script>
-  <script src="js/task.js"></script>
-  <script src="js/toast.js"></script>
-  <script src="js/auth.js"></script>
+  <!-- Task Detail Modal -->
+  <div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content card-premium">
+        <div class="modal-header border-0 p-4 pb-2">
+          <h5 class="modal-title fw-bold text-primary" id="detailTitle">Task Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4 pt-0">
+          <div class="row mb-4">
+            <div class="col-md-6 border-end">
+              <div class="mb-2"><small class="text-muted fw-bold">DESCRIPTION</small><p id="detailDesc" class="mb-0"></p></div>
+              <div class="mb-2"><small class="text-muted fw-bold">PRIORITY</small><div id="detailPriority"></div></div>
+              <div class="mb-2"><small class="text-muted fw-bold">STATUS</small><div id="detailStatus"></div></div>
+              <div class="mb-2"><small class="text-muted fw-bold">DEADLINE</small><p id="detailDeadline" class="mb-0"></p></div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-2"><small class="text-muted fw-bold">TEAM</small><p id="detailTeam" class="mb-0"></p></div>
+              <div class="mb-2"><small class="text-muted fw-bold">ASSIGNEE</small><p id="detailAssignee" class="mb-0"></p></div>
+              <div class="mt-4">
+                <small class="text-muted fw-bold">CHECKLIST PROGRESS <span id="checklistPercent">0%</span></small>
+                <div class="progress progress-premium mt-1">
+                  <div id="checklistProgress" class="progress-bar" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ul class="nav nav-pills mb-4 bg-light p-1 rounded-3 gap-1" id="detailTabs" role="tablist">
+            <li class="nav-item"><button class="nav-link active" id="checklist-tab" data-bs-toggle="tab" data-bs-target="#checklist-panel" type="button">Checklist</button></li>
+            <li class="nav-item"><button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments-panel" type="button">Comments</button></li>
+            <li class="nav-item"><button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments-panel" type="button">Attachments</button></li>
+            <li class="nav-item"><button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-panel" type="button">History</button></li>
+          </ul>
+
+          <div class="tab-content" id="detailTabsContent">
+            <div class="tab-pane fade show active" id="checklist-panel">
+              <div id="subTaskList" class="mb-3"></div>
+              <div class="input-group">
+                <input type="text" id="newSubTask" class="form-control" placeholder="Add a sub-task...">
+                <button class="btn btn-primary" onclick="handleCreateSubTask()">Add</button>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="comments-panel">
+              <div id="commentList" class="mb-3" style="max-height: 300px; overflow-y: auto;"></div>
+              <div class="input-group">
+                <input type="text" id="commentText" class="form-control" placeholder="Write a comment...">
+                <button class="btn btn-primary" onclick="handleAddComment()">Post</button>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="attachments-panel">
+              <div id="attachmentList" class="mb-3 d-flex flex-wrap gap-2"></div>
+              <div class="input-group">
+                <input type="file" id="attachmentFile" class="form-control">
+                <button class="btn btn-primary" onclick="handleUploadFile()">Upload</button>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="history-panel">
+              <div id="historyList" style="max-height: 250px; overflow-y: auto;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/socket.js"></script>
+  <script src="js/api.js?v=6"></script>
+  <script src="js/ui.js?v=3"></script>
+  <script src="js/kanban.js"></script>
+  <script src="js/task.js?v=3"></script>
+  <script src="js/team.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notification.js"></script>
+  <script>
+    window.onload = () => {
+      const token = localStorage.getItem("token");
+      if (!token) window.location.href = "login.html";
+      else {
+        loadTasks();
+        loadTeams();
+        checkDeadlineAlerts();
+      }
+    };
+  </script>
 </body>
 </html>

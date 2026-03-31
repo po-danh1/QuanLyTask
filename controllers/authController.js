@@ -1,6 +1,9 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 exports.register = async (req, res) => {
   try {
@@ -50,7 +53,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id, email: user.email, role: user.role },
       "secretkey",
       { expiresIn: "1d" }
     );
@@ -61,5 +64,52 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
+  }
+};
+
+exports.googleLogin = async (req, res) => {
+  try {
+    const { credential } = req.body;
+    
+    // Xác thực token với Google
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+    
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name: username, picture: avatar } = payload;
+    
+    // Tìm hoặc tạo mới User
+    let user = await User.findOne({ email });
+    
+    if (!user) {
+      user = new User({
+        username,
+        email,
+        googleId,
+        avatar
+      });
+      await user.save();
+    } else if (!user.googleId) {
+      // Nếu user đã đăng ký bằng email trước đó, cập nhật thêm googleId
+      user.googleId = googleId;
+      user.avatar = avatar;
+      await user.save();
+    }
+    
+    // Tạo JWT token của hệ thống
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      "secretkey",
+      { expiresIn: "1d" }
+    );
+    
+    return res.json({
+      message: "Google login success",
+      token
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Xác thực Google thất bại", error: error.message });
   }
 };
