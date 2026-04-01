@@ -45,17 +45,23 @@ exports.getDeadlineAlerts = async (req, res) => {
 exports.getTaskStats = async (req, res) => {
   try {
     const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
     const userTeams = await Team.find({ "members.userId": userId }).select("_id");
     const teamIds = userTeams.map(t => t._id);
 
-    const baseFilter = {
-      isDeleted: false,
-      $or: [
-        { userId: userId },
-        { assigneeId: userId },
-        { teamId: { $in: teamIds } }
-      ]
-    };
+    let baseFilter;
+    if (isAdmin) {
+      baseFilter = { isDeleted: false };
+    } else {
+      baseFilter = {
+        isDeleted: false,
+        $or: [
+          { userId: userId },
+          { assigneeId: userId },
+          { teamId: { $in: teamIds } }
+        ]
+      };
+    }
 
     const total = await Task.countDocuments(baseFilter);
 
@@ -93,17 +99,25 @@ exports.getTasks = async (req, res) => {
     } = req.query;
 
     const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
     const userTeams = await Team.find({ "members.userId": userId }).select("_id");
     const teamIds = userTeams.map(t => t._id);
 
-    const filter = {
-      isDeleted: false,
-      $or: [
-        { userId: userId },
-        { assigneeId: userId },
-        { teamId: { $in: teamIds } }
-      ]
-    };
+    let filter;
+    if (isAdmin) {
+      // Admin xem tất cả tasks chưa xóa
+      filter = { isDeleted: false };
+    } else {
+      // User chỉ xem tasks của mình hoặc team mình
+      filter = {
+        isDeleted: false,
+        $or: [
+          { userId: userId },
+          { assigneeId: userId },
+          { teamId: { $in: teamIds } }
+        ]
+      };
+    }
 
     if (priority) {
       filter.priority = priority;
@@ -144,17 +158,25 @@ exports.getTasks = async (req, res) => {
 exports.getTaskById = async (req, res) => {
   try {
     const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
     const userTeams = await Team.find({ "members.userId": userId }).select("_id");
     const teamIds = userTeams.map(t => t._id);
 
-    const task = await Task.findOne({
-      _id: req.params.id,
-      $or: [
-        { userId: userId },
-        { teamId: { $in: teamIds } }
-      ],
-      isDeleted: false
-    })
+    let query;
+    if (isAdmin) {
+      query = { _id: req.params.id, isDeleted: false };
+    } else {
+      query = {
+        _id: req.params.id,
+        $or: [
+          { userId: userId },
+          { teamId: { $in: teamIds } }
+        ],
+        isDeleted: false
+      };
+    }
+
+    const task = await Task.findOne(query)
     .populate("userId", "username email avatar")
     .populate("assigneeId", "username email avatar")
     .populate("teamId", "name");
@@ -203,11 +225,16 @@ exports.createTask = async (req, res) => {
 
 exports.updateTask = async (req, res) => {
   try {
-    const oldTask = await Task.findOne({
-      _id: req.params.id,
-      userId: req.user.id,
-      isDeleted: false
-    });
+    const isAdmin = req.user.role === 'admin';
+    
+    let query;
+    if (isAdmin) {
+      query = { _id: req.params.id, isDeleted: false };
+    } else {
+      query = { _id: req.params.id, userId: req.user.id, isDeleted: false };
+    }
+
+    const oldTask = await Task.findOne(query);
 
     if (!oldTask) {
       return res.status(404).json({ message: "Task not found" });
@@ -264,12 +291,17 @@ exports.updateTask = async (req, res) => {
 
 exports.deleteTask = async (req, res) => {
   try {
+    const isAdmin = req.user.role === 'admin';
+    
+    let query;
+    if (isAdmin) {
+      query = { _id: req.params.id, isDeleted: false };
+    } else {
+      query = { _id: req.params.id, userId: req.user.id, isDeleted: false };
+    }
+
     const task = await Task.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        userId: req.user.id,
-        isDeleted: false
-      },
+      query,
       { isDeleted: true },
       { new: true }
     );

@@ -32,6 +32,11 @@ const taskSchema = new mongoose.Schema({
     ref: "Team",
     default: null
   },
+  projectId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Project",
+    default: null
+  },
   assigneeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

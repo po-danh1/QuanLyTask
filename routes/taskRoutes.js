@@ -6,7 +6,7 @@ const attachmentController = require("../controllers/attachmentController");
 const analyticsController = require("../controllers/analyticsController");
 const aiController = require("../controllers/aiController");
 const timeLogController = require("../controllers/timeLogController");
-const { auth } = require("../middleware/authMiddleware");
+const { auth, authorize } = require("../middleware/authMiddleware");
 const multer = require("multer");
 
 const storage = multer.diskStorage({
@@ -21,15 +21,15 @@ const upload = multer({ storage });
 
 router.use(auth);
 
+router.get("/tasks/analytics", authorize("admin"), analyticsController.getSystemAnalytics);
 router.get("/tasks/stats", taskController.getTaskStats);
 router.get("/tasks/deadline-alerts", taskController.getDeadlineAlerts);
 router.get("/tasks", taskController.getTasks);
-router.get("/tasks/analytics", analyticsController.getAnalytics);
 router.get("/tasks/:id", taskController.getTaskById);
 
-// AI Roadmap
+// AI Roadmap - chỉ admin được apply
 router.post("/ai/roadmap-suggest", aiController.generateRoadmap);
-router.post("/ai/roadmap-apply", aiController.createRoadmapTasks);
+router.post("/ai/roadmap-apply", authorize("admin"), aiController.createRoadmapTasks);
 
 router.post("/tasks/bulk", taskController.bulkTasks);
 router.post("/tasks", taskController.createTask);

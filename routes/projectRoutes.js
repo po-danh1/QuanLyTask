@@ -7,5 +7,6 @@ router.use(auth);
 
 router.post("/projects", projectController.createProject);
 router.get("/projects", projectController.getProjects);
+router.delete("/projects/:projectId", projectController.deleteProject);
 
 module.exports = router;

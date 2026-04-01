@@ -3,6 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 const connectDB = require("./config/db");
 
 const app = express();
@@ -21,12 +23,16 @@ app.use(express.json());
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
+// Swagger documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api", require("./routes/taskRoutes"));
 app.use("/api", require("./routes/commentRoutes"));
 app.use("/api", require("./routes/logRoutes"));
 app.use("/api", require("./routes/teamRoutes"));
 app.use("/api", require("./routes/projectRoutes"));
+app.use("/api", require("./routes/userRoutes"));
 
 const startCronJobs = require("./scheduler");
 

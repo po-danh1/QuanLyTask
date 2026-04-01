@@ -1,20 +1,10 @@
 const Task = require("../models/taskModel");
 const Team = require("../models/teamModel");
 
-exports.getAnalytics = async (req, res) => {
+// Analytics cho toàn hệ thống - chỉ admin
+exports.getSystemAnalytics = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const userTeams = await Team.find({ "members.userId": userId }).select("_id");
-    const teamIds = userTeams.map(t => t._id);
-
-    const filter = {
-      isDeleted: false,
-      $or: [
-        { userId: userId },
-        { assigneeId: userId },
-        { teamId: { $in: teamIds } }
-      ]
-    };
+    const filter = { isDeleted: false };
 
     const statusCounts = await Task.aggregate([
       { $match: filter },
@@ -26,7 +16,19 @@ exports.getAnalytics = async (req, res) => {
       { $group: { _id: "$priority", count: { $sum: 1 } } }
     ]);
 
-    res.json({ status: statusCounts, priority: priorityCounts });
+    const totalTasks = await Task.countDocuments(filter);
+    const totalUsers = await require("../models/userModel").countDocuments();
+    const totalTeams = await Team.countDocuments();
+
+    res.json({ 
+      status: statusCounts, 
+      priority: priorityCounts,
+      summary: {
+        totalTasks,
+        totalUsers,
+        totalTeams
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -66,6 +66,12 @@ exports.createRoadmapTasks = async (req, res) => {
   try {
     const { tasks, teamId } = req.body;
     const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    // Chỉ admin được dùng roadmap-apply
+    if (!isAdmin) {
+      return res.status(403).json({ message: "Chỉ admin mới có quyền áp dụng roadmap cho toàn hệ thống" });
+    }
 
     if (!tasks || !Array.isArray(tasks)) {
       return res.status(400).json({ message: "Tasks array required" });
