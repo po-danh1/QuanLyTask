@@ -22,12 +22,14 @@ body {
 
 /* Header & Glass Nav */
 .modern-nav {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 1000;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
 }
 
 /* Cards & Elements */
@@ -161,3 +163,110 @@ body {
     position: relative;
     height: 250px;
 }
+
+/* Team Card */
+.team-card {
+    transition: all 0.2s;
+    border: 1px solid var(--border) !important;
+}
+
+.team-card:hover {
+    box-shadow: var(--shadow-lg) !important;
+}
+
+/* Time Tracking */
+.timer-display {
+    font-family: 'Courier New', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: 4px;
+    text-align: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, #eef2ff, #f0fdf4);
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+}
+
+.time-log-item {
+    border-left: 3px solid var(--primary);
+    padding-left: 1rem;
+}
+
+/* Admin Dashboard */
+.admin-panel-modal .modal-dialog {
+    max-width: 900px;
+}
+
+.admin-stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+}
+
+.log-entry {
+    border-left: 3px solid #e2e8f0;
+    padding-left: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.log-entry.action-created { border-color: #22c55e; }
+.log-entry.action-updated { border-color: #f59e0b; }
+.log-entry.action-deleted { border-color: #ef4444; }
+
+/* Project List */
+.project-card {
+    border-left: 4px solid var(--primary) !important;
+    transition: all 0.2s;
+}
+
+.project-card:hover {
+    transform: translateX(4px);
+    box-shadow: var(--shadow-lg) !important;
+}
+
+/* Modal nav pills */
+#detailTabs .nav-link {
+    border-radius: 8px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+#detailTabs .nav-link.active {
+    background-color: var(--primary);
+    color: white;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .timer-display {
+        font-size: 1.5rem;
+    }
+    .modern-nav .btn-premium {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeInUp 0.3s ease forwards;
+}
+
+/* Badge subtle variants */
+.bg-success-subtle { background-color: #dcfce7 !important; }
+.bg-danger-subtle { background-color: #fef2f2 !important; }
+.bg-warning-subtle { background-color: #fffbeb !important; }
+.bg-info-subtle { background-color: #eff6ff !important; }
+.bg-secondary-subtle { background-color: #f8fafc !important; }
+
+.text-success { color: #16a34a !important; }
+.text-danger { color: #dc2626 !important; }
+.text-warning { color: #d97706 !important; }
+.text-info { color: #2563eb !important; }

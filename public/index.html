@@ -1,32 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Task Manager</title>
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
+  <title>SmartTask – Quản lý công việc thông minh</title>
+  <meta name="description" content="Hệ thống quản lý task thông minh với AI Roadmap, Kanban Board, Team Management và Time Tracking." />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-light">
-  <!-- AI MAGIC MODAL (NEW ID TO FIX VISIBILITY) -->
+
+  <!-- ==================== AI ROADMAP MODAL ==================== -->
   <div class="modal fade" id="aiMagicModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4 bg-white">
         <div class="modal-header border-bottom p-4">
           <h5 class="modal-title fw-bold text-primary">✨ AI Project Roadmapper</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body p-4 bg-white" style="display: block !important; visibility: visible !important; min-height: 300px;">
+        <div class="modal-body p-4 bg-white" style="min-height: 300px;">
           <!-- STEP 1: INPUT -->
-          <div id="aiInputStep" style="display: block !important;">
+          <div id="aiInputStep">
             <h6 class="fw-bold mb-3 text-dark">Dự án tiếp theo của bạn là gì?</h6>
             <div class="mb-3">
               <label class="form-label small fw-bold text-muted">Mục tiêu dự án</label>
-              <input type="text" id="aiGoal" class="form-control form-control-lg border-primary" placeholder="Ví dụ: Thiết kế App bán hàng" style="color: black !important;">
+              <input type="text" id="aiGoal" class="form-control form-control-lg border-primary" placeholder="Ví dụ: Thiết kế App bán hàng">
             </div>
             <div class="mb-4">
               <label class="form-label small fw-bold text-muted">Thời gian (Tùy chọn)</label>
@@ -36,24 +35,20 @@
               🚀 Lập kế hoạch với Gemini AI
             </button>
           </div>
-
           <!-- STEP 2: RESULT -->
-          <div id="aiResultStep" class="d-none" style="display: none;">
-             <div class="d-flex justify-content-between align-items-center mb-3">
-               <h6 class="fw-bold m-0 text-dark">Lộ trình đề xuất:</h6>
-               <span class="badge bg-info p-2" id="aiStatusText">0 Task</span>
-             </div>
-             <div id="aiRoadmapList" class="row g-2 mb-4" style="max-height: 400px; overflow-y: auto;">
-               <!-- Tasks go here -->
-             </div>
-             <div class="d-flex gap-2">
-               <button class="btn btn-success flex-grow-1 py-3 fw-bold" onclick="handleApplyRoadmap()">✅ Áp dụng</button>
-               <button class="btn btn-light flex-grow-1" onclick="resetAIModal()">Quay lại</button>
-             </div>
+          <div id="aiResultStep" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold m-0 text-dark">Lộ trình đề xuất:</h6>
+              <span class="badge bg-info p-2" id="aiStatusText">0 Task</span>
+            </div>
+            <div id="aiRoadmapList" class="row g-2 mb-4" style="max-height: 400px; overflow-y: auto;"></div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-success flex-grow-1 py-3 fw-bold" onclick="handleApplyRoadmap()">✅ Áp dụng</button>
+              <button class="btn btn-light flex-grow-1" onclick="resetAIModal()">Quay lại</button>
+            </div>
           </div>
-
           <!-- STEP 3: LOADING -->
-          <div id="aiLoading" class="text-center py-5 d-none" style="display: none;">
+          <div id="aiLoading" class="text-center py-5 d-none">
             <div class="spinner-border text-primary mb-3" role="status"></div>
             <p class="fw-bold text-dark">Gemini AI đang suy nghĩ...</p>
           </div>
@@ -61,7 +56,169 @@
       </div>
     </div>
   </div>
-  <!-- Modern Navbar -->
+
+  <!-- ==================== EDIT TASK MODAL ==================== -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-premium">
+        <div class="modal-header border-0 p-4 pb-2">
+          <h5 class="modal-title fw-bold text-primary">✏️ Chỉnh sửa Task</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4 pt-2">
+          <input type="hidden" id="editId" />
+          <div class="mb-3">
+            <label class="form-label fw-bold small text-muted">TIÊU ĐỀ</label>
+            <input type="text" id="editTitle" class="form-control" placeholder="Tiêu đề task" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small text-muted">MÔ TẢ</label>
+            <textarea id="editDescription" class="form-control" rows="3" placeholder="Mô tả chi tiết..."></textarea>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-bold small text-muted">ĐỘ ƯU TIÊN</label>
+              <select id="editPriority" class="form-select">
+                <option value="low">🟢 Low</option>
+                <option value="medium">🟡 Medium</option>
+                <option value="high">🔴 High</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-bold small text-muted">TRẠNG THÁI</label>
+              <select id="editStatus" class="form-select">
+                <option value="pending">⏳ Pending</option>
+                <option value="progress">🚀 In Progress</option>
+                <option value="reviewing">📤 Reviewing</option>
+                <option value="completed">✅ Completed</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-bold small text-muted">DEADLINE</label>
+            <input type="datetime-local" id="editDeadline" class="form-control" />
+          </div>
+          <button class="btn btn-primary w-100 btn-premium" onclick="updateTask()">💾 Lưu thay đổi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ADD MEMBER MODAL ==================== -->
+  <div class="modal fade" id="addMemberModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-premium">
+        <div class="modal-header border-0 p-4 pb-2">
+          <h5 class="modal-title fw-bold text-primary">➕ Thêm thành viên</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4 pt-2">
+          <input type="hidden" id="addMemberTeamId" />
+          <div class="mb-4">
+            <label class="form-label fw-bold small text-muted">EMAIL THÀNH VIÊN</label>
+            <input type="email" id="newMemberEmail" class="form-control" placeholder="example@email.com" />
+            <div class="form-text">Nhập email của người dùng đã đăng ký trong hệ thống.</div>
+          </div>
+          <button class="btn btn-primary w-100 btn-premium" onclick="handleAddMember()">✅ Thêm vào nhóm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PROJECT MODAL ==================== -->
+  <div class="modal fade" id="projectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content card-premium">
+        <div class="modal-header border-0 p-4 pb-2">
+          <h5 class="modal-title fw-bold text-primary">📁 Quản lý Dự án</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4 pt-2">
+          <!-- Create Form -->
+          <div class="card border-0 bg-light rounded-3 p-3 mb-4">
+            <h6 class="fw-bold mb-3">➕ Tạo dự án mới</h6>
+            <div class="row g-3">
+              <div class="col-md-5">
+                <input type="text" id="newProjectName" class="form-control" placeholder="Tên dự án..." />
+              </div>
+              <div class="col-md-4">
+                <input type="text" id="newProjectDesc" class="form-control" placeholder="Mô tả (tùy chọn)..." />
+              </div>
+              <div class="col-md-3">
+                <select id="newProjectTeam" class="form-select">
+                  <option value="">Không gắn team</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <button class="btn btn-primary btn-premium" onclick="handleCreateProject()">🚀 Tạo dự án</button>
+              </div>
+            </div>
+          </div>
+          <!-- Project List -->
+          <h6 class="fw-bold mb-3">📋 Danh sách dự án</h6>
+          <div id="projectList" class="row g-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ADMIN PANEL MODAL ==================== -->
+  <div class="modal fade" id="adminPanelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered admin-panel-modal">
+      <div class="modal-content card-premium">
+        <div class="modal-header border-0 p-4 pb-2">
+          <h5 class="modal-title fw-bold text-danger">🔐 Admin Dashboard</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4 pt-0">
+          <!-- Admin Tabs -->
+          <ul class="nav nav-pills mb-4 bg-light p-1 rounded-3 gap-1" role="tablist">
+            <li class="nav-item">
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#admin-users-panel" type="button">👤 Quản lý Users</button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#admin-logs-panel" type="button" onclick="loadAdminLogs()">📋 System Logs</button>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <!-- Users Tab -->
+            <div class="tab-pane fade show active" id="admin-users-panel">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold m-0">Danh sách người dùng</h6>
+                <button class="btn btn-sm btn-outline-primary btn-premium" onclick="loadAdminUsers()">🔄 Làm mới</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Người dùng</th>
+                      <th>Role</th>
+                      <th>Ngày tạo</th>
+                      <th>Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminUserList">
+                    <tr><td colspan="4" class="text-center text-muted">Đang tải...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <!-- Logs Tab -->
+            <div class="tab-pane fade" id="admin-logs-panel">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold m-0">Nhật ký hệ thống</h6>
+                <button class="btn btn-sm btn-outline-primary btn-premium" onclick="loadAdminLogs()">🔄 Làm mới</button>
+              </div>
+              <div id="adminLogList" style="max-height: 450px; overflow-y: auto;"></div>
+              <div class="d-flex justify-content-between align-items-center mt-3" id="adminLogPagination"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== NAVBAR ==================== -->
   <nav class="modern-nav mb-4">
     <div class="container-xl d-flex justify-content-between align-items-center py-2">
       <div class="d-flex align-items-center">
@@ -76,6 +233,13 @@
         </button>
         <button class="btn btn-outline-primary btn-premium" data-bs-toggle="modal" data-bs-target="#teamModal" onclick="loadTeams()">
           <span class="me-1">👥</span> Teams
+        </button>
+        <button class="btn btn-outline-secondary btn-premium" data-bs-toggle="modal" data-bs-target="#projectModal" onclick="loadProjects(); updateProjectTeamSelect()">
+          <span class="me-1">📁</span> Projects
+        </button>
+        <!-- Nút Admin: chỉ hiển thị với admin -->
+        <button id="adminPanelBtn" class="btn btn-outline-danger btn-premium d-none" onclick="openAdminPanel()">
+          <span class="me-1">🔐</span> Admin
         </button>
         <button class="btn btn-outline-danger btn-premium ms-2" onclick="logout()">Logout</button>
       </div>
@@ -166,19 +330,19 @@
     <!-- Add Task Card -->
     <div class="card-premium mb-4">
       <div class="card-body p-4">
-        <h5 class="mb-4 text-primary fw-bold">➕ Add New Task</h5>
+        <h5 class="mb-4 text-primary fw-bold">➕ Thêm Task mới</h5>
         <div class="row g-3">
           <div class="col-md-4">
-            <input id="title" class="form-control" placeholder="Title" />
+            <input id="title" class="form-control" placeholder="Tiêu đề task *" />
           </div>
           <div class="col-md-4">
-            <input id="description" class="form-control" placeholder="Description" />
+            <input id="description" class="form-control" placeholder="Mô tả" />
           </div>
           <div class="col-md-2">
             <select id="priority" class="form-select">
-              <option value="low">Low Priority</option>
-              <option value="medium">Medium Priority</option>
-              <option value="high">High Priority</option>
+              <option value="low">🟢 Low</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="high">🔴 High</option>
             </select>
           </div>
           <div class="col-md-2">
@@ -190,7 +354,7 @@
             </select>
           </div>
           <div class="col-md-3">
-            <select id="taskAssignee" class="form-select">
+            <select id="taskAssignee" class="form-select" disabled>
               <option value="">Assignee (Self)</option>
             </select>
           </div>
@@ -206,19 +370,19 @@
       </div>
     </div>
 
-    <!-- Bulk Action Bar (Hidden by default) -->
-    <div id="bulkActionBar" class="alert alert-info border-0 shadow-lg d-none mb-4 rounded-4 py-3 px-4 animate__animated animate__fadeInUp" style="position: sticky; bottom: 20px; z-index: 1001;">
+    <!-- Bulk Action Bar -->
+    <div id="bulkActionBar" class="alert alert-info border-0 shadow-lg d-none mb-4 rounded-4 py-3 px-4" style="position: sticky; bottom: 20px; z-index: 1001;">
       <div class="d-flex justify-content-between align-items-center">
         <div class="fw-bold">
           <span id="selectedCount">0</span> tasks selected
         </div>
         <div class="d-flex gap-2">
-          <select id="bulkStatus" class="form-select form-select-sm" style="width: 150px;">
+          <select id="bulkStatus" class="form-select form-select-sm" style="width: 170px;">
             <option value="">Change Status...</option>
             <option value="pending">Pending</option>
             <option value="progress">In Progress</option>
             <option value="reviewing">Request Review</option>
-            <option value="completed">Completed (Approve)</option>
+            <option value="completed">Completed</option>
           </select>
           <button class="btn btn-sm btn-primary" onclick="handleBulkStatus()">Apply</button>
           <button class="btn btn-sm btn-danger" onclick="handleBulkDelete()">Delete Selected</button>
@@ -238,32 +402,35 @@
     </ul>
 
     <div class="tab-content" id="taskViewsContent">
+      <!-- Table View -->
       <div class="tab-pane fade show active" id="table-view">
         <div class="card-premium">
           <div class="card-body p-0">
-            <div class="p-3 border-bottom bg-white rounded-top-4 d-flex gap-2">
-              <div class="input-group" style="max-width: 300px;">
+            <div class="p-3 border-bottom bg-white rounded-top-4 d-flex gap-2 flex-wrap">
+              <div class="input-group" style="max-width: 280px;">
                 <span class="input-group-text bg-transparent border-0">🔍</span>
-                <input type="text" id="search" class="form-control border-0" placeholder="Search tasks..." oninput="loadTasks()">
+                <input type="text" id="search" class="form-control border-0" placeholder="Tìm kiếm task..." oninput="loadTasks()">
               </div>
-              <select id="filterPriority" class="form-select border-0 bg-light" onchange="loadTasks()" style="width: 150px;">
-                <option value="">All Priorities</option>
+              <select id="filterPriority" class="form-select border-0 bg-light" onchange="loadTasks()" style="width: 140px;">
+                <option value="">Tất cả ưu tiên</option>
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
               </select>
               <select id="filterStatus" class="form-select border-0 bg-light" onchange="loadTasks()" style="width: 150px;">
-                <option value="">All Statuses</option>
+                <option value="">Tất cả trạng thái</option>
                 <option value="pending">Pending</option>
                 <option value="progress">In Progress</option>
+                <option value="reviewing">Reviewing</option>
                 <option value="completed">Completed</option>
               </select>
               <select id="sortBy" class="form-select border-0 bg-light" onchange="loadTasks()" style="width: 150px;">
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="deadline_asc">Deadline Asc</option>
+                <option value="newest">Mới nhất</option>
+                <option value="oldest">Cũ nhất</option>
+                <option value="deadline_asc">Deadline gần nhất</option>
+                <option value="priority_desc">Ưu tiên cao</option>
               </select>
-              <button class="btn btn-primary" onclick="loadTasks()">Filter</button>
+              <button class="btn btn-primary btn-premium" onclick="loadTasks()">Lọc</button>
             </div>
             <div class="table-responsive">
               <table class="table table-modern mb-0" id="taskTable">
@@ -271,36 +438,41 @@
                   <tr>
                     <th style="width: 40px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)"></th>
                     <th>Task Details</th>
-                    <th>Description</th>
-                    <th>Priority</th>
+                    <th>Mô tả</th>
+                    <th>Ưu tiên</th>
                     <th>Deadline</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
                   </tr>
                 </thead>
                 <tbody id="taskTableBody"></tbody>
               </table>
             </div>
-            <!-- Pagination Controls -->
+            <!-- Pagination -->
             <div class="p-3 bg-white rounded-bottom-4 d-flex justify-content-between align-items-center border-top">
-              <button class="btn btn-sm btn-outline-primary btn-premium" onclick="prevPage()">PREV</button>
+              <button class="btn btn-sm btn-outline-primary btn-premium" onclick="prevPage()">← PREV</button>
               <span id="pageNumber" class="fw-bold text-muted small">Page 1</span>
-              <button class="btn btn-sm btn-outline-primary btn-premium" onclick="nextPage()">NEXT</button>
+              <button class="btn btn-sm btn-outline-primary btn-premium" onclick="nextPage()">NEXT →</button>
             </div>
           </div>
         </div>
       </div>
+      <!-- Kanban View -->
       <div class="tab-pane fade" id="kanban-view">
         <div class="row kanban-wrapper">
-          <div class="col-md-4">
+          <div class="col-md-3">
             <h5>⏳ Pending</h5>
             <div id="pending" class="kanban-column" ondragover="allowDrop(event)" ondrop="drop(event, 'pending')"></div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <h5>🚀 In Progress</h5>
             <div id="progress" class="kanban-column" ondragover="allowDrop(event)" ondrop="drop(event, 'progress')"></div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
+            <h5>📤 Reviewing</h5>
+            <div id="reviewing" class="kanban-column" ondragover="allowDrop(event)" ondrop="drop(event, 'reviewing')"></div>
+          </div>
+          <div class="col-md-3">
             <h5>✅ Completed</h5>
             <div id="completed" class="kanban-column" ondragover="allowDrop(event)" ondrop="drop(event, 'completed')"></div>
           </div>
@@ -309,7 +481,7 @@
     </div>
   </div>
 
-  <!-- Team Management Modal -->
+  <!-- ==================== TEAM MODAL ==================== -->
   <div class="modal fade" id="teamModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content card-premium">
@@ -318,40 +490,60 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-4 pt-0">
-          <div class="mb-4">
-            <label class="form-label fw-bold">Create New Team</label>
+          <div class="mb-4 card border-0 bg-light rounded-3 p-3">
+            <label class="form-label fw-bold">Tạo nhóm mới</label>
             <div class="input-group">
-              <input type="text" id="newTeamName" class="form-control" placeholder="Enter team name...">
-              <button class="btn btn-primary" onclick="handleCreateTeam()">Create Team</button>
+              <input type="text" id="newTeamName" class="form-control" placeholder="Nhập tên nhóm...">
+              <button class="btn btn-primary btn-premium" onclick="handleCreateTeam()">Tạo nhóm</button>
             </div>
           </div>
+          <h6 class="fw-bold mb-3">Nhóm của bạn</h6>
           <div id="teamList" class="row g-3"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Task Detail Modal -->
+  <!-- ==================== TASK DETAIL MODAL ==================== -->
   <div class="modal fade" id="detailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content card-premium">
         <div class="modal-header border-0 p-4 pb-2">
           <h5 class="modal-title fw-bold text-primary" id="detailTitle">Task Details</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-4 pt-0">
+          <!-- Info Grid -->
           <div class="row mb-4">
-            <div class="col-md-6 border-end">
-              <div class="mb-2"><small class="text-muted fw-bold">DESCRIPTION</small><p id="detailDesc" class="mb-0"></p></div>
-              <div class="mb-2"><small class="text-muted fw-bold">PRIORITY</small><div id="detailPriority"></div></div>
-              <div class="mb-2"><small class="text-muted fw-bold">STATUS</small><div id="detailStatus"></div></div>
-              <div class="mb-2"><small class="text-muted fw-bold">DEADLINE</small><p id="detailDeadline" class="mb-0"></p></div>
+            <div class="col-md-6 border-end pe-4">
+              <div class="mb-3">
+                <small class="text-muted fw-bold d-block mb-1">MÔ TẢ</small>
+                <p id="detailDesc" class="mb-0"></p>
+              </div>
+              <div class="mb-3">
+                <small class="text-muted fw-bold d-block mb-1">ĐỘ ƯU TIÊN</small>
+                <div id="detailPriority"></div>
+              </div>
+              <div class="mb-3">
+                <small class="text-muted fw-bold d-block mb-1">TRẠNG THÁI</small>
+                <div id="detailStatus"></div>
+              </div>
+              <div class="mb-3">
+                <small class="text-muted fw-bold d-block mb-1">DEADLINE</small>
+                <p id="detailDeadline" class="mb-0"></p>
+              </div>
             </div>
-            <div class="col-md-6">
-              <div class="mb-2"><small class="text-muted fw-bold">TEAM</small><p id="detailTeam" class="mb-0"></p></div>
-              <div class="mb-2"><small class="text-muted fw-bold">ASSIGNEE</small><p id="detailAssignee" class="mb-0"></p></div>
-              <div class="mt-4">
-                <small class="text-muted fw-bold">CHECKLIST PROGRESS <span id="checklistPercent">0%</span></small>
+            <div class="col-md-6 ps-4">
+              <div class="mb-3">
+                <small class="text-muted fw-bold d-block mb-1">NHÓM</small>
+                <p id="detailTeam" class="mb-0"></p>
+              </div>
+              <div class="mb-3">
+                <small class="text-muted fw-bold d-block mb-1">ASSIGNEE</small>
+                <p id="detailAssignee" class="mb-0"></p>
+              </div>
+              <div class="mt-2">
+                <small class="text-muted fw-bold">CHECKLIST <span id="checklistPercent">0%</span></small>
                 <div class="progress progress-premium mt-1">
                   <div id="checklistProgress" class="progress-bar" style="width: 0%"></div>
                 </div>
@@ -359,37 +551,70 @@
             </div>
           </div>
 
+          <!-- Detail Tabs -->
           <ul class="nav nav-pills mb-4 bg-light p-1 rounded-3 gap-1" id="detailTabs" role="tablist">
-            <li class="nav-item"><button class="nav-link active" id="checklist-tab" data-bs-toggle="tab" data-bs-target="#checklist-panel" type="button">Checklist</button></li>
-            <li class="nav-item"><button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments-panel" type="button">Comments</button></li>
-            <li class="nav-item"><button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments-panel" type="button">Attachments</button></li>
-            <li class="nav-item"><button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-panel" type="button">History</button></li>
+            <li class="nav-item"><button class="nav-link active" id="checklist-tab" data-bs-toggle="tab" data-bs-target="#checklist-panel" type="button">✅ Checklist</button></li>
+            <li class="nav-item"><button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments-panel" type="button">💬 Comments</button></li>
+            <li class="nav-item"><button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments-panel" type="button">📎 Attachments</button></li>
+            <li class="nav-item"><button class="nav-link" id="time-tab" data-bs-toggle="tab" data-bs-target="#time-panel" type="button">⏱️ Time</button></li>
+            <li class="nav-item"><button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-panel" type="button">📜 History</button></li>
           </ul>
 
           <div class="tab-content" id="detailTabsContent">
+            <!-- Checklist Tab -->
             <div class="tab-pane fade show active" id="checklist-panel">
               <div id="subTaskList" class="mb-3"></div>
               <div class="input-group">
-                <input type="text" id="newSubTask" class="form-control" placeholder="Add a sub-task...">
-                <button class="btn btn-primary" onclick="handleCreateSubTask()">Add</button>
+                <input type="text" id="newSubTask" class="form-control" placeholder="Thêm công việc con...">
+                <button class="btn btn-primary btn-premium" onclick="handleCreateSubTask()">Thêm</button>
               </div>
             </div>
+
+            <!-- Comments Tab -->
             <div class="tab-pane fade" id="comments-panel">
               <div id="commentList" class="mb-3" style="max-height: 300px; overflow-y: auto;"></div>
               <div class="input-group">
-                <input type="text" id="commentText" class="form-control" placeholder="Write a comment...">
-                <button class="btn btn-primary" onclick="handleAddComment()">Post</button>
+                <input type="text" id="commentText" class="form-control" placeholder="Viết bình luận...">
+                <button class="btn btn-primary btn-premium" id="btnAddComment" onclick="handleAddComment()">Gửi</button>
               </div>
             </div>
+
+            <!-- Attachments Tab -->
             <div class="tab-pane fade" id="attachments-panel">
               <div id="attachmentList" class="mb-3 d-flex flex-wrap gap-2"></div>
               <div class="input-group">
                 <input type="file" id="attachmentFile" class="form-control">
-                <button class="btn btn-primary" onclick="handleUploadFile()">Upload</button>
+                <button class="btn btn-primary btn-premium" onclick="handleUploadFile()">Upload</button>
               </div>
             </div>
+
+            <!-- Time Tracking Tab -->
+            <div class="tab-pane fade" id="time-panel">
+              <!-- Timer Display -->
+              <div class="timer-display" id="timerDisplay">00:00:00</div>
+              <!-- Total Time -->
+              <div class="text-center mb-3">
+                <span class="text-muted small">Tổng thời gian đã làm: </span>
+                <strong id="totalTimeText" class="text-primary">0h 0m</strong>
+              </div>
+              <!-- Note & Controls -->
+              <div class="row g-2 mb-4">
+                <div class="col">
+                  <input type="text" id="timeLogNote" class="form-control" placeholder="Ghi chú phiên làm việc (tùy chọn)..." />
+                </div>
+                <div class="col-auto">
+                  <button id="btnStartTime" class="btn btn-success btn-premium" onclick="handleStartTimeLog()">▶️ Bắt đầu</button>
+                  <button id="btnStopTime" class="btn btn-danger btn-premium d-none" onclick="handleStopTimeLog()">⏹️ Dừng lại</button>
+                </div>
+              </div>
+              <!-- Log History -->
+              <h6 class="fw-bold mb-2">Lịch sử phiên làm việc</h6>
+              <div id="timeLogList" style="max-height: 250px; overflow-y: auto;"></div>
+            </div>
+
+            <!-- History Tab -->
             <div class="tab-pane fade" id="history-panel">
-              <div id="historyList" style="max-height: 250px; overflow-y: auto;"></div>
+              <div id="historyList" style="max-height: 300px; overflow-y: auto;"></div>
             </div>
           </div>
         </div>
@@ -397,29 +622,48 @@
     </div>
   </div>
 
-  </div>
-
+  <!-- ==================== SCRIPTS ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/socket.js"></script>
-  <script src="js/api.js?v=6"></script>
-  <script src="js/ui.js?v=3"></script>
+  <script src="js/api.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/ui.js"></script>
   <script src="js/kanban.js"></script>
-  <script src="js/task.js?v=3"></script>
+  <script src="js/task.js"></script>
   <script src="js/team.js"></script>
+  <script src="js/project.js"></script>
+  <script src="js/admin.js"></script>
   <script src="js/analytics.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/notification.js"></script>
   <script>
+    // Alias để tương thích
+    function checkDeadlineAlerts() {
+      if (typeof loadDeadlineAlerts === "function") loadDeadlineAlerts();
+    }
+
     window.onload = () => {
       const token = localStorage.getItem("token");
-      if (!token) window.location.href = "login.html";
-      else {
+      if (!token) {
+        window.location.href = "login.html";
+      } else {
         loadTasks();
         loadTeams();
         checkDeadlineAlerts();
+        initAdminFeatures();
       }
     };
   </script>
+
+  <!-- Toast Notification -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+    <div id="appToast" class="toast align-items-center text-bg-dark border-0" role="alert">
+      <div class="d-flex">
+        <div class="toast-body fw-medium" id="toastMessage">Thông báo</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
