@@ -13,7 +13,7 @@ const logSchema = new mongoose.Schema({
   taskId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Task",
-    required: true
+    default: null
   },
   details: {
     type: String,

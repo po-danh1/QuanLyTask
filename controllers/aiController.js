@@ -1,7 +1,7 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 const Task = require("../models/taskModel");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 exports.generateRoadmap = async (req, res) => {
   try {
@@ -10,8 +10,6 @@ exports.generateRoadmap = async (req, res) => {
     if (!prompt) {
       return res.status(400).json({ message: "Prompt is required" });
     }
-
-    const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
     const aiPrompt = `
       You are an expert Project Architect.
@@ -38,9 +36,12 @@ exports.generateRoadmap = async (req, res) => {
       Return ONLY the raw JSON array. DO NOT include any markdown or commentary.
     `;
 
-    const result = await model.generateContent(aiPrompt);
-    const response = await result.response;
-    let text = response.text();
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: aiPrompt }] }]
+    });
+
+    const text = result.candidates[0].content.parts[0].text;
     
     // Xử lý chuỗi JSON thông minh hơn (loại bỏ markdown nếu có)
     const jsonMatch = text.match(/\[[\s\S]*\]/);

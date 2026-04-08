@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const Team = require("../models/teamModel");
 const User = require("../models/userModel");
 const Log = require("../models/logModel");
@@ -10,8 +9,6 @@ const isTeamAdmin = (team, userId) => {
 };
 
 exports.createTeam = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
   try {
     const { name } = req.body;
     if (!name) return res.status(400).json({ message: "Team name is required" });
@@ -22,24 +19,18 @@ exports.createTeam = async (req, res) => {
       ownerId: req.user.id,
       members: [{ userId: req.user.id, role: "admin" }]
     });
-    await team.save({ session });
+    await team.save();
 
-    // 2. Ghi Log (Thực hiện nhiều thao tác trong 1 transaction)
-    await Log.create([{
+    // 2. Ghi Log
+    await Log.create({
       action: "created_team",
       userId: req.user.id,
+      taskId: null,
       details: `Đã tạo nhóm mới: ${name}`
-    }], { session });
-
-    // Commit giao dịch
-    await session.commitTransaction();
-    session.endSession();
+    });
 
     res.status(201).json(team);
   } catch (error) {
-    // Nếu có lỗi, hủy bỏ mọi thay đổi
-    await session.abortTransaction();
-    session.endSession();
     res.status(500).json({ message: error.message });
   }
 };

@@ -33,6 +33,7 @@ app.use("/api", require("./routes/logRoutes"));
 app.use("/api", require("./routes/teamRoutes"));
 app.use("/api", require("./routes/projectRoutes"));
 app.use("/api", require("./routes/userRoutes"));
+app.use("/api", require("./routes/notificationRoutes"));
 
 const startCronJobs = require("./scheduler");
 
