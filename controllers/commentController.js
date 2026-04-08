@@ -1,5 +1,6 @@
 const Comment = require("../models/commentModel");
 const Task = require("../models/taskModel");
+const Notification = require("../models/notificationModel");
 
 exports.getCommentsByTaskId = async (req, res) => {
   try {
@@ -60,6 +61,34 @@ exports.addComment = async (req, res) => {
     console.log("Comment added successfully", populatedComment._id);
 
     req.app.get("io").emit("commentAdded", { taskId, comment: populatedComment });
+
+    // Tạo notification cho chủ task và assignee
+    const io = req.app.get("io");
+    const commenterName = populatedComment.userId?.username || "Someone";
+    
+    // Thông báo cho chủ task (nếu không phải người comment)
+    if (task.userId.toString() !== req.user.id) {
+      const notification = await Notification.create({
+        userId: task.userId,
+        title: "Bình luận mới trên task của bạn",
+        message: `${commenterName} đã bình luận: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+        type: "task",
+        link: `/tasks/${taskId}`
+      });
+      io.to(task.userId.toString()).emit("notification", notification);
+    }
+    
+    // Thông báo cho assignee (nếu có và khác người comment)
+    if (task.assigneeId && task.assigneeId.toString() !== req.user.id && task.assigneeId.toString() !== task.userId.toString()) {
+      const notification = await Notification.create({
+        userId: task.assigneeId,
+        title: "Bình luận mới trên task được gán cho bạn",
+        message: `${commenterName} đã bình luận: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+        type: "task",
+        link: `/tasks/${taskId}`
+      });
+      io.to(task.assigneeId.toString()).emit("notification", notification);
+    }
 
     res.status(201).json(populatedComment);
   } catch (error) {

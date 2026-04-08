@@ -1,9 +1,10 @@
 const cron = require("node-cron");
 const Task = require("./models/taskModel");
 const User = require("./models/userModel");
+const Notification = require("./models/notificationModel");
 const { sendDeadlineEmail } = require("./controllers/emailService");
 
-const startCronJobs = () => {
+const startCronJobs = (io) => {
   // Chạy file này mỗi 1 giờ (phút 0 mỗi giờ)
   cron.schedule("0 * * * *", async () => {
     try {
@@ -38,6 +39,41 @@ const startCronJobs = () => {
           // Đánh dấu đã gửi
           task.deadlineEmailSent = true;
           await task.save();
+        }
+
+        // Tạo in-app notification cho chủ task
+        const hoursLeft = Math.ceil((task.deadline - new Date()) / (1000 * 60 * 60));
+        const notifMsg = hoursLeft <= 1 
+          ? `Task "${task.title}" sắp đến hạn (dưới 1 giờ)!`
+          : `Task "${task.title}" còn ${hoursLeft} giờ nữa là đến hạn`;
+        
+        // Notification cho user tạo task
+        const notification = await Notification.create({
+          userId: task.userId,
+          title: "Task sắp đến hạn",
+          message: notifMsg,
+          type: "task",
+          link: `/tasks/${task._id}`
+        });
+        
+        // Emit socket event
+        if (io) {
+          io.to(task.userId.toString()).emit("notification", notification);
+        }
+
+        // Thông báo cho assignee nếu có và khác với user tạo task
+        if (task.assigneeId && task.assigneeId.toString() !== task.userId.toString()) {
+          const assigneeNotif = await Notification.create({
+            userId: task.assigneeId,
+            title: "Task được gán sắp đến hạn",
+            message: notifMsg,
+            type: "task",
+            link: `/tasks/${task._id}`
+          });
+          
+          if (io) {
+            io.to(task.assigneeId.toString()).emit("notification", assigneeNotif);
+          }
         }
       }
 

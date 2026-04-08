@@ -39,7 +39,7 @@ const startCronJobs = require("./scheduler");
 
 const PORT = 3000;
 
-startCronJobs();
+startCronJobs(io);
 
 server.listen(PORT, () => {
   console.log("Server running on port " + PORT + " with Socket.io");

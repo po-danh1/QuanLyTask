@@ -1,6 +1,7 @@
 const Team = require("../models/teamModel");
 const User = require("../models/userModel");
 const Log = require("../models/logModel");
+const Notification = require("../models/notificationModel");
 
 // Kiểm tra user có quyền admin trong team hoặc là owner
 const isTeamAdmin = (team, userId) => {
@@ -76,6 +77,17 @@ exports.addMember = async (req, res) => {
 
     team.members.push({ userId: userToAdd._id, role: memberRole });
     await team.save();
+
+    // Tạo notification cho người được thêm vào team
+    const io = req.app.get("io");
+    const notification = await Notification.create({
+      userId: userToAdd._id,
+      title: "Bạn được thêm vào nhóm mới",
+      message: `Bạn đã được thêm vào nhóm "${team.name}" với vai trò ${memberRole}`,
+      type: "team",
+      link: `/teams/${teamId}`
+    });
+    io.to(userToAdd._id.toString()).emit("notification", notification);
 
     res.json({ message: "Thêm thành viên thành công", team });
   } catch (error) {

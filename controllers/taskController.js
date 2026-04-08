@@ -1,6 +1,7 @@
 const Task = require("../models/taskModel");
 const Log = require("../models/logModel");
 const Team = require("../models/teamModel");
+const Notification = require("../models/notificationModel");
 
 exports.getDeadlineAlerts = async (req, res) => {
   try {
@@ -217,6 +218,20 @@ exports.createTask = async (req, res) => {
       details: "Đã tạo task mới"
     });
 
+    // Tạo notification cho assignee nếu có
+    if (assigneeId && assigneeId !== req.user.id) {
+      const notification = await Notification.create({
+        userId: assigneeId,
+        title: "Bạn được gán một task mới",
+        message: `Task "${title}" đã được gán cho bạn`,
+        type: "task",
+        link: `/tasks/${task._id}`
+      });
+
+      const io = req.app.get("io");
+      io.to(assigneeId.toString()).emit("notification", notification);
+    }
+
     res.status(201).json(task);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -280,6 +295,22 @@ exports.updateTask = async (req, res) => {
         details: changeText,
         changes: changesObj
       });
+    }
+
+    // Tạo notification nếu đổi assignee
+    if (req.body.assigneeId && 
+        oldTask.assigneeId?.toString() !== req.body.assigneeId && 
+        req.body.assigneeId !== req.user.id) {
+      const notification = await Notification.create({
+        userId: req.body.assigneeId,
+        title: "Bạn được gán một task",
+        message: `Task "${task.title}" đã được gán cho bạn`,
+        type: "task",
+        link: `/tasks/${task._id}`
+      });
+
+      const io = req.app.get("io");
+      io.to(req.body.assigneeId.toString()).emit("notification", notification);
     }
 
     res.json(task);
