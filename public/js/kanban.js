@@ -21,9 +21,11 @@ function getKanbanDeadlineText(deadline, status) {
 }
 
 function renderKanban(tasks) {
-  document.getElementById("pending").innerHTML = "";
-  document.getElementById("progress").innerHTML = "";
-  document.getElementById("completed").innerHTML = "";
+  const cols = ["pending", "progress", "reviewing", "completed"];
+  cols.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = "";
+  });
 
   if (!tasks || tasks.length === 0) return;
 
@@ -50,16 +52,13 @@ function renderKanban(tasks) {
       </div>
     `;
 
-    if (task.status === "completed") {
-      document.getElementById("completed").innerHTML += card;
-    } else if (task.status === "progress") {
-      document.getElementById("progress").innerHTML += card;
-    } else {
-      document.getElementById("pending").innerHTML += card;
-    }
+    const validStatuses = ["pending", "progress", "reviewing", "completed"];
+    const targetId = validStatuses.includes(task.status) ? task.status : "pending";
+    const targetEl = document.getElementById(targetId);
+    if (targetEl) targetEl.innerHTML += card;
   });
 
-  // Thêm sự kiện hover cho cột
+  // Drag events
   document.querySelectorAll(".kanban-column").forEach(col => {
     col.setAttribute("ondragover", "allowDrop(event)");
     col.setAttribute("ondragenter", "this.classList.add('drag-over')");
@@ -79,7 +78,6 @@ function drag(ev) {
 async function drop(ev, status) {
   ev.preventDefault();
   const id = ev.dataTransfer.getData("id");
-
   await updateTaskApi(id, { status });
   loadTasks();
 }
