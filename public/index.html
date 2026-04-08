@@ -98,6 +98,18 @@
             <label class="form-label fw-bold small text-muted">DEADLINE</label>
             <input type="datetime-local" id="editDeadline" class="form-control" />
           </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small text-muted">NHÓM</label>
+            <select id="editTeam" class="form-select" onchange="loadEditTeamMembers()">
+              <option value="">Cá nhân (Không có nhóm)</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-bold small text-muted">NGƯỜI THỰC HIỆN</label>
+            <select id="editAssignee" class="form-select">
+              <option value="">Chưa giao</option>
+            </select>
+          </div>
           <button class="btn btn-primary w-100 btn-premium" onclick="updateTask()">💾 Lưu thay đổi</button>
         </div>
       </div>
@@ -105,7 +117,7 @@
   </div>
 
   <!-- ==================== ADD MEMBER MODAL ==================== -->
-  <div class="modal fade" id="addMemberModal" tabindex="-1" aria-hidden="true">
+  <div class="modal fade" id="addMemberModal" tabindex="-1" aria-hidden="true" style="z-index: 2000;">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content card-premium">
         <div class="modal-header border-0 p-4 pb-2">
@@ -114,10 +126,19 @@
         </div>
         <div class="modal-body p-4 pt-2">
           <input type="hidden" id="addMemberTeamId" />
+          <div class="mb-3">
+            <label class="form-label fw-bold small text-muted">CHỌN THÀNH VIÊN</label>
+            <select id="newMemberSelect" class="form-select">
+              <option value="">-- Chọn người dùng --</option>
+            </select>
+            <div class="form-text">Chọn người dùng đã đăng ký trong hệ thống.</div>
+          </div>
           <div class="mb-4">
-            <label class="form-label fw-bold small text-muted">EMAIL THÀNH VIÊN</label>
-            <input type="email" id="newMemberEmail" class="form-control" placeholder="example@email.com" />
-            <div class="form-text">Nhập email của người dùng đã đăng ký trong hệ thống.</div>
+            <label class="form-label fw-bold small text-muted">VAI TRÒ</label>
+            <select id="newMemberRole" class="form-select">
+              <option value="member">Thành viên</option>
+              <option value="admin">Quản trị viên</option>
+            </select>
           </div>
           <button class="btn btn-primary w-100 btn-premium" onclick="handleAddMember()">✅ Thêm vào nhóm</button>
         </div>
@@ -228,6 +249,25 @@
         <h4 class="m-0 fw-bold text-primary">SmartTask</h4>
       </div>
       <div class="d-flex align-items-center gap-2">
+        <!-- Notification Bell Dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-outline-warning btn-premium position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="loadAllNotifications()">
+            <span class="me-1">🔔</span>
+            <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+              0
+              <span class="visually-hidden">unread notifications</span>
+            </span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end shadow-lg border-0" style="width: 350px; max-height: 400px; overflow-y: auto;">
+            <div class="dropdown-header d-flex justify-content-between align-items-center">
+              <span class="fw-bold">🔔 Thông báo</span>
+              <button class="btn btn-sm btn-link text-decoration-none" onclick="markAllNotificationsAsRead(event)">Đánh dấu đã đọc</button>
+            </div>
+            <div id="notificationList">
+              <div class="dropdown-item text-muted text-center py-3">Đang tải...</div>
+            </div>
+          </div>
+        </div>
         <button class="btn btn-outline-info btn-premium" type="button" data-bs-toggle="collapse" data-bs-target="#analyticsDashboard" onclick="initAnalytics()">
           <span class="me-1">📊</span> Dashboard
         </button>
@@ -624,9 +664,11 @@
 
   <!-- ==================== SCRIPTS ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="js/socket.js"></script>
+  <!-- Load Socket.IO from API server -->
+  <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+  <!-- Load api.js first - contains BASE_URL and shared functions -->
   <script src="js/api.js"></script>
+  <script src="js/socket.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/kanban.js"></script>
@@ -652,6 +694,7 @@
         loadTeams();
         checkDeadlineAlerts();
         initAdminFeatures();
+        loadUnreadCount(); // Load notification badge count quickly
       }
     };
   </script>

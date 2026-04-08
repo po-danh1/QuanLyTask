@@ -1,4 +1,5 @@
-const API_URL = "/api/tasks";
+const BASE_URL = "http://localhost:3000";
+const API_URL = `${BASE_URL}/api/tasks`;
 
 function getToken() {
   return localStorage.getItem("token");
@@ -67,7 +68,7 @@ async function deleteTaskApi(id) {
 }
 
 async function loadStats() {
-  const res = await fetch("/api/tasks/stats", {
+  const res = await fetch(`${BASE_URL}/api/tasks/stats`, {
     headers: { Authorization: `Bearer ${getToken()}` }
   });
   if (handleUnauthorized(res)) return;
@@ -80,7 +81,7 @@ async function loadStats() {
 
 // ==================== Comments API ====================
 async function getCommentsByTaskId(taskId) {
-  const res = await fetch(`/api/comments/${taskId}`, {
+  const res = await fetch(`${BASE_URL}/api/comments/${taskId}`, {
     headers: { Authorization: `Bearer ${getToken()}` }
   });
   if (handleUnauthorized(res)) return [];
@@ -89,7 +90,7 @@ async function getCommentsByTaskId(taskId) {
 }
 
 async function addCommentToTask(taskId, text) {
-  const res = await fetch(`/api/comments/${taskId}`, {
+  const res = await fetch(`${BASE_URL}/api/comments/${taskId}`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ text })
@@ -100,7 +101,7 @@ async function addCommentToTask(taskId, text) {
 }
 
 async function deleteCommentApi(commentId) {
-  const res = await fetch(`/api/comments/${commentId}`, {
+  const res = await fetch(`${BASE_URL}/api/comments/${commentId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${getToken()}` }
   });
@@ -110,7 +111,7 @@ async function deleteCommentApi(commentId) {
 
 // ==================== Logs API ====================
 async function getLogsByTaskId(taskId) {
-  const res = await fetch(`/api/logs/${taskId}`, {
+  const res = await fetch(`${BASE_URL}/api/logs/${taskId}`, {
     headers: { Authorization: `Bearer ${getToken()}` }
   });
   if (handleUnauthorized(res)) return [];
@@ -119,7 +120,7 @@ async function getLogsByTaskId(taskId) {
 }
 
 async function getAllLogsApi(page = 1) {
-  const res = await fetch(`/api/logs?page=${page}&limit=50`, {
+  const res = await fetch(`${BASE_URL}/api/logs?page=${page}&limit=50`, {
     headers: { Authorization: `Bearer ${getToken()}` }
   });
   if (handleUnauthorized(res)) return null;
@@ -129,7 +130,7 @@ async function getAllLogsApi(page = 1) {
 
 // ==================== Teams API ====================
 async function createTeam(name) {
-  const res = await fetch("/api/teams", {
+  const res = await fetch(`${BASE_URL}/api/teams`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ name })
@@ -139,7 +140,7 @@ async function createTeam(name) {
 }
 
 async function getMyTeams() {
-  const res = await fetch("/api/teams", {
+  const res = await fetch(`${BASE_URL}/api/teams`, {
     headers: { Authorization: `Bearer ${getToken()}` }
   });
   if (handleUnauthorized(res)) return [];
@@ -147,7 +148,7 @@ async function getMyTeams() {
 }
 
 async function addTeamMember(teamId, email, role = "member") {
-  const res = await fetch(`/api/teams/${teamId}/members`, {
+  const res = await fetch(`${BASE_URL}/api/teams/${teamId}/members`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ email, role })
@@ -156,7 +157,7 @@ async function addTeamMember(teamId, email, role = "member") {
 }
 
 async function removeTeamMemberApi(teamId, memberId) {
-  const res = await fetch(`/api/teams/${teamId}/members/${memberId}`, {
+  const res = await fetch(`${BASE_URL}/api/teams/${teamId}/members/${memberId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${getToken()}` }
   });
@@ -164,7 +165,7 @@ async function removeTeamMemberApi(teamId, memberId) {
 }
 
 async function deleteTeamApi(teamId) {
-  const res = await fetch(`/api/teams/${teamId}`, {
+  const res = await fetch(`${BASE_URL}/api/teams/${teamId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${getToken()}` }
   });
@@ -174,7 +175,7 @@ async function deleteTeamApi(teamId) {
 
 // ==================== Sub-tasks API ====================
 async function addSubTask(taskId, text) {
-  const res = await fetch(`/api/tasks/${taskId}/subtasks`, {
+  const res = await fetch(`${BASE_URL}/api/tasks/${taskId}/subtasks`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ text })
@@ -183,7 +184,7 @@ async function addSubTask(taskId, text) {
 }
 
 async function toggleSubTask(taskId, subTaskId) {
-  const res = await fetch(`/api/tasks/${taskId}/subtasks/${subTaskId}`, {
+  const res = await fetch(`${BASE_URL}/api/tasks/${taskId}/subtasks/${subTaskId}`, {
     method: "PATCH",
     headers: { Authorization: `Bearer ${getToken()}` }
   });
@@ -191,7 +192,7 @@ async function toggleSubTask(taskId, subTaskId) {
 }
 
 async function deleteSubTask(taskId, subTaskId) {
-  const res = await fetch(`/api/tasks/${taskId}/subtasks/${subTaskId}`, {
+  const res = await fetch(`${BASE_URL}/api/tasks/${taskId}/subtasks/${subTaskId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${getToken()}` }
   });
@@ -200,7 +201,7 @@ async function deleteSubTask(taskId, subTaskId) {
 
 // ==================== Analytics API ====================
 async function getAnalyticsData() {
-  const res = await fetch("/api/tasks/analytics", {
+  const res = await fetch(`${BASE_URL}/api/tasks/analytics`, {
     headers: { Authorization: `Bearer ${getToken()}` }
   });
   if (handleUnauthorized(res)) return null;
@@ -211,7 +212,7 @@ async function getAnalyticsData() {
 async function uploadAttachment(taskId, file) {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch(`/api/tasks/${taskId}/attachments`, {
+  const res = await fetch(`${BASE_URL}/api/tasks/${taskId}/attachments`, {
     method: "POST",
     headers: { Authorization: `Bearer ${getToken()}` },
     body: formData
@@ -221,7 +222,7 @@ async function uploadAttachment(taskId, file) {
 }
 
 async function deleteAttachmentApi(taskId, attachmentId) {
-  const res = await fetch(`/api/tasks/${taskId}/attachments/${attachmentId}`, {
+  const res = await fetch(`${BASE_URL}/api/tasks/${taskId}/attachments/${attachmentId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${getToken()}` }
   });
@@ -231,7 +232,7 @@ async function deleteAttachmentApi(taskId, attachmentId) {
 
 // ==================== Bulk Tasks API ====================
 async function bulkTasksApi(taskIds, action, status) {
-  const res = await fetch("/api/tasks/bulk", {
+  const res = await fetch(`${BASE_URL}/api/tasks/bulk`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ taskIds, action, status })
@@ -242,7 +243,7 @@ async function bulkTasksApi(taskIds, action, status) {
 
 // ==================== AI Roadmap API ====================
 async function getAIRoadmapSuggest(prompt, timeframe) {
-  const res = await fetch("/api/ai/roadmap-suggest", {
+  const res = await fetch(`${BASE_URL}/api/ai/roadmap-suggest`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ prompt, timeframe })
@@ -252,7 +253,7 @@ async function getAIRoadmapSuggest(prompt, timeframe) {
 }
 
 async function applyAIRoadmap(tasks, teamId) {
-  const res = await fetch("/api/ai/roadmap-apply", {
+  const res = await fetch(`${BASE_URL}/api/ai/roadmap-apply`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ tasks, teamId })
@@ -263,7 +264,7 @@ async function applyAIRoadmap(tasks, teamId) {
 
 // ==================== Time Tracking API ====================
 async function startTimeLogApi(taskId, note = "") {
-  const res = await fetch(`/api/tasks/${taskId}/timelogs/start`, {
+  const res = await fetch(`${BASE_URL}/api/tasks/${taskId}/timelogs/start`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ note })
@@ -273,7 +274,7 @@ async function startTimeLogApi(taskId, note = "") {
 }
 
 async function stopTimeLogApi(logId) {
-  const res = await fetch(`/api/timelogs/${logId}/stop`, {
+  const res = await fetch(`${BASE_URL}/api/timelogs/${logId}/stop`, {
     method: "PATCH",
     headers: { Authorization: `Bearer ${getToken()}` }
   });
@@ -282,7 +283,7 @@ async function stopTimeLogApi(logId) {
 }
 
 async function getTaskTimeLogsApi(taskId) {
-  const res = await fetch(`/api/tasks/${taskId}/timelogs`, {
+  const res = await fetch(`${BASE_URL}/api/tasks/${taskId}/timelogs`, {
     headers: { Authorization: `Bearer ${getToken()}` }
   });
   if (handleUnauthorized(res)) return [];
@@ -291,7 +292,7 @@ async function getTaskTimeLogsApi(taskId) {
 }
 
 async function getMyTimeLogsApi() {
-  const res = await fetch("/api/timelogs/me", {
+  const res = await fetch(`${BASE_URL}/api/timelogs/me`, {
     headers: { Authorization: `Bearer ${getToken()}` }
   });
   if (handleUnauthorized(res)) return [];
@@ -301,7 +302,7 @@ async function getMyTimeLogsApi() {
 
 // ==================== Projects API ====================
 async function getProjectsApi() {
-  const res = await fetch("/api/projects", {
+  const res = await fetch(`${BASE_URL}/api/projects`, {
     headers: { Authorization: `Bearer ${getToken()}` }
   });
   if (handleUnauthorized(res)) return [];
@@ -309,7 +310,7 @@ async function getProjectsApi() {
 }
 
 async function createProjectApi(data) {
-  const res = await fetch("/api/projects", {
+  const res = await fetch(`${BASE_URL}/api/projects`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(data)
@@ -319,7 +320,7 @@ async function createProjectApi(data) {
 }
 
 async function deleteProjectApi(projectId) {
-  const res = await fetch(`/api/projects/${projectId}`, {
+  const res = await fetch(`${BASE_URL}/api/projects/${projectId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${getToken()}` }
   });
@@ -329,7 +330,7 @@ async function deleteProjectApi(projectId) {
 
 // ==================== Admin API ====================
 async function getAllUsersApi() {
-  const res = await fetch("/api/admin/users", {
+  const res = await fetch(`${BASE_URL}/api/admin/users`, {
     headers: { Authorization: `Bearer ${getToken()}` }
   });
   if (handleUnauthorized(res)) return [];
@@ -338,7 +339,7 @@ async function getAllUsersApi() {
 }
 
 async function updateUserRoleApi(userId, role) {
-  const res = await fetch(`/api/admin/users/${userId}/role`, {
+  const res = await fetch(`${BASE_URL}/api/admin/users/${userId}/role`, {
     method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify({ role })
@@ -348,7 +349,7 @@ async function updateUserRoleApi(userId, role) {
 }
 
 async function deleteUserApi(userId) {
-  const res = await fetch(`/api/admin/users/${userId}`, {
+  const res = await fetch(`${BASE_URL}/api/admin/users/${userId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${getToken()}` }
   });

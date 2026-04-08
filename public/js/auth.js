@@ -1,3 +1,5 @@
+// BASE_URL is defined in api.js which loads before this file
+
 async function login() {
   const email = document.getElementById("email")?.value.trim();
   const password = document.getElementById("password")?.value.trim();
@@ -7,7 +9,7 @@ async function login() {
     return;
   }
 
-  const res = await fetch("/api/auth/login", {
+  const res = await fetch(`${BASE_URL}/api/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -39,7 +41,7 @@ async function register() {
     return;
   }
 
-  const res = await fetch("/api/auth/register", {
+  const res = await fetch(`${BASE_URL}/api/auth/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -67,7 +69,7 @@ function logout() {
 
 async function handleCredentialResponse(response) {
   try {
-    const res = await fetch("/api/auth/google", {
+    const res = await fetch(`${BASE_URL}/api/auth/google`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

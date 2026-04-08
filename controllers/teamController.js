@@ -2,6 +2,7 @@ const Team = require("../models/teamModel");
 const User = require("../models/userModel");
 const Log = require("../models/logModel");
 const Notification = require("../models/notificationModel");
+const Task = require("../models/taskModel");
 
 // Kiểm tra user có quyền admin trong team hoặc là owner
 const isTeamAdmin = (team, userId) => {
@@ -39,9 +40,18 @@ exports.createTeam = async (req, res) => {
 exports.getMyTeams = async (req, res) => {
   try {
     const userId = req.user.id;
-    const teams = await Team.find({
-      $or: [{ ownerId: userId }, { "members.userId": userId }]
-    }).populate("members.userId", "username email avatar");
+    const isAdmin = req.user.role === 'admin';
+    
+    let teams;
+    if (isAdmin) {
+      // Admin xem tất cả team
+      teams = await Team.find({}).populate("members.userId", "username email avatar").populate("ownerId", "username email");
+    } else {
+      // User thường chỉ xem team của mình
+      teams = await Team.find({
+        $or: [{ ownerId: userId }, { "members.userId": userId }]
+      }).populate("members.userId", "username email avatar");
+    }
 
     res.json(teams);
   } catch (error) {

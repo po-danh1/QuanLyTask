@@ -423,8 +423,64 @@ async function editTask(id) {
   document.getElementById("editStatus").value = task.status || "pending";
   document.getElementById("editDeadline").value = task.deadline ? task.deadline.slice(0, 16) : "";
 
+  // Load teams and populate dropdown
+  await loadEditTeams();
+  
+  // Set current team and load its members
+  const teamSelect = document.getElementById("editTeam");
+  teamSelect.value = task.teamId?._id || task.teamId || "";
+  await loadEditTeamMembers();
+  
+  // Set current assignee
+  const assigneeSelect = document.getElementById("editAssignee");
+  assigneeSelect.value = task.assigneeId?._id || task.assigneeId || "";
+
   const modal = new bootstrap.Modal(document.getElementById("editModal"));
   modal.show();
+}
+
+// Load teams for edit modal
+async function loadEditTeams() {
+  const teams = await getMyTeams();
+  const select = document.getElementById("editTeam");
+  select.innerHTML = '<option value="">Cá nhân (Không có nhóm)</option>';
+  
+  teams.forEach(team => {
+    const option = document.createElement("option");
+    option.value = team._id;
+    option.textContent = team.name;
+    select.appendChild(option);
+  });
+}
+
+// Load team members for assignee dropdown
+async function loadEditTeamMembers() {
+  const teamId = document.getElementById("editTeam").value;
+  const assigneeSelect = document.getElementById("editAssignee");
+  assigneeSelect.innerHTML = '<option value="">Chưa giao</option>';
+  
+  if (!teamId) return;
+  
+  // Get team details with members
+  const teams = await getMyTeams();
+  const team = teams.find(t => t._id === teamId);
+  
+  if (team && team.members) {
+    team.members.forEach(member => {
+      const option = document.createElement("option");
+      option.value = member.userId._id || member.userId;
+      option.textContent = member.userId.username || member.userId.email || "Thành viên";
+      assigneeSelect.appendChild(option);
+    });
+    
+    // Add team owner as option too
+    if (team.ownerId) {
+      const ownerOption = document.createElement("option");
+      ownerOption.value = team.ownerId._id || team.ownerId;
+      ownerOption.textContent = (team.ownerId.username || team.ownerId.email || "Chủ nhóm") + " (Owner)";
+      assigneeSelect.appendChild(ownerOption);
+    }
+  }
 }
 
 async function updateTask() {
@@ -434,13 +490,25 @@ async function updateTask() {
   const priority = document.getElementById("editPriority").value;
   const status = document.getElementById("editStatus").value;
   const deadline = document.getElementById("editDeadline").value;
+  const teamId = document.getElementById("editTeam").value;
+  const assigneeId = document.getElementById("editAssignee").value;
 
   if (!title) {
     showToast("Vui lòng nhập title", "warning");
     return;
   }
 
-  await updateTaskApi(id, { title, description, priority, status, deadline: deadline || null });
+  const updateData = { 
+    title, 
+    description, 
+    priority, 
+    status, 
+    deadline: deadline || null,
+    teamId: teamId || null,
+    assigneeId: assigneeId || null
+  };
+
+  await updateTaskApi(id, updateData);
 
   const modalEl = document.getElementById("editModal");
   const modal = bootstrap.Modal.getInstance(modalEl);

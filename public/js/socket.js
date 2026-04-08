@@ -1,4 +1,5 @@
-const socket = io();
+// BASE_URL is defined in api.js which loads before this file
+const socket = io(BASE_URL);
 
 socket.on("connect", () => {
     console.log("Connected to Real-time server");

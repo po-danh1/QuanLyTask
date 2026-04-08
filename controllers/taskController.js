@@ -2,6 +2,7 @@ const Task = require("../models/taskModel");
 const Log = require("../models/logModel");
 const Team = require("../models/teamModel");
 const Notification = require("../models/notificationModel");
+const User = require("../models/userModel");
 
 exports.getDeadlineAlerts = async (req, res) => {
   try {
@@ -241,12 +242,26 @@ exports.createTask = async (req, res) => {
 exports.updateTask = async (req, res) => {
   try {
     const isAdmin = req.user.role === 'admin';
+    const userId = req.user.id;
+    
+    // Get user's teams for team access check
+    const userTeams = await Team.find({ "members.userId": userId }).select("_id");
+    const teamIds = userTeams.map(t => t._id.toString());
     
     let query;
     if (isAdmin) {
       query = { _id: req.params.id, isDeleted: false };
     } else {
-      query = { _id: req.params.id, userId: req.user.id, isDeleted: false };
+      // Allow task owner, assignee, or team member to update
+      query = { 
+        _id: req.params.id, 
+        isDeleted: false,
+        $or: [
+          { userId: userId },
+          { assigneeId: userId },
+          { teamId: { $in: teamIds } }
+        ]
+      };
     }
 
     const oldTask = await Task.findOne(query);
@@ -283,6 +298,20 @@ exports.updateTask = async (req, res) => {
     if (req.body.deadline && (!oldTask.deadline || oldTask.deadline.toString() !== new Date(req.body.deadline).toString())) {
       details.push("Đã thay đổi Deadline");
       changesObj.push({ field: "Hạn chót", old: oldTask.deadline, new: task.deadline });
+    }
+    // Log team change
+    if (req.body.teamId !== undefined && oldTask.teamId?.toString() !== req.body.teamId) {
+      const oldTeamName = oldTask.teamId ? await Team.findById(oldTask.teamId).then(t => t?.name || "Không có") : "Không có";
+      const newTeamName = req.body.teamId ? await Team.findById(req.body.teamId).then(t => t?.name || "Không xác định") : "Không có";
+      details.push(`Nhóm: ${oldTeamName} ➔ ${newTeamName}`);
+      changesObj.push({ field: "Nhóm", old: oldTeamName, new: newTeamName });
+    }
+    // Log assignee change
+    if (req.body.assigneeId !== undefined && oldTask.assigneeId?.toString() !== req.body.assigneeId) {
+      const oldAssignee = oldTask.assigneeId ? await User.findById(oldTask.assigneeId).then(u => u?.username || "Chưa giao") : "Chưa giao";
+      const newAssignee = req.body.assigneeId ? await User.findById(req.body.assigneeId).then(u => u?.username || "Không xác định") : "Chưa giao";
+      details.push(`Người thực hiện: ${oldAssignee} ➔ ${newAssignee}`);
+      changesObj.push({ field: "Người thực hiện", old: oldAssignee, new: newAssignee });
     }
 
     const changeText = details.length > 0 ? "Thay đổi: " + details.join(", ") : "Cập nhật thông tin task";

@@ -95,22 +95,56 @@ async function handleCreateTeam() {
   }
 }
 
-function openAddMemberModal(teamId) {
+async function openAddMemberModal(teamId) {
   document.getElementById("addMemberTeamId").value = teamId;
-  document.getElementById("newMemberEmail").value = "";
+  document.getElementById("newMemberSelect").value = "";
+  document.getElementById("newMemberRole").value = "member";
+  
+  // Load all users into dropdown
+  await loadUsersForSelect();
+  
   const modal = new bootstrap.Modal(document.getElementById("addMemberModal"));
   modal.show();
 }
 
+// Load all users for member selection
+async function loadUsersForSelect() {
+  const select = document.getElementById("newMemberSelect");
+  select.innerHTML = '<option value="">-- Đang tải... --</option>';
+  
+  const users = await getAllUsersApi();
+  if (!users || !Array.isArray(users)) {
+    select.innerHTML = '<option value="">Không thể tải danh sách</option>';
+    return;
+  }
+  
+  // Filter out users already in the team
+  const teamId = document.getElementById("addMemberTeamId").value;
+  const team = allTeams.find(t => t._id === teamId);
+  const existingMemberIds = team ? team.members.map(m => m.userId?._id?.toString() || m.userId?.toString()) : [];
+  
+  const availableUsers = users.filter(u => !existingMemberIds.includes(u._id.toString()));
+  
+  if (availableUsers.length === 0) {
+    select.innerHTML = '<option value="">Không có người dùng khả dụng</option>';
+    return;
+  }
+  
+  select.innerHTML = '<option value="">-- Chọn người dùng --</option>' +
+    availableUsers.map(u => `<option value="${u.email}">${u.username || u.email} (${u.email})</option>`).join("");
+}
+
 async function handleAddMember() {
   const teamId = document.getElementById("addMemberTeamId").value;
-  const email = document.getElementById("newMemberEmail").value.trim();
-  if (!email) return showToast("Vui lòng nhập email", "warning");
+  const email = document.getElementById("newMemberSelect").value;
+  const role = document.getElementById("newMemberRole").value;
+  
+  if (!email) return showToast("Vui lòng chọn người dùng", "warning");
 
-  const result = await addTeamMember(teamId, email);
+  const result = await addTeamMember(teamId, email, role);
   if (result && result.message && result.message.includes("thành công")) {
     showToast("Thành viên đã được thêm!", "success");
-    document.getElementById("newMemberEmail").value = "";
+    document.getElementById("newMemberSelect").value = "";
     const modal = bootstrap.Modal.getInstance(document.getElementById("addMemberModal"));
     modal.hide();
     await loadTeams();

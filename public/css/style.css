@@ -270,3 +270,41 @@ body {
 .text-danger { color: #dc2626 !important; }
 .text-warning { color: #d97706 !important; }
 .text-info { color: #2563eb !important; }
+
+/* Notification Dropdown Styles */
+#notificationList .dropdown-item {
+    transition: background-color 0.2s ease;
+    white-space: normal;
+}
+
+#notificationList .dropdown-item:hover {
+    background-color: #f1f5f9;
+}
+
+#notificationList .dropdown-item:last-child {
+    border-bottom: none !important;
+}
+
+#notificationBadge {
+    font-size: 0.65rem;
+    padding: 0.25em 0.5em;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* Modal z-index fixes */
+#addMemberModal {
+    z-index: 2000 !important;
+}
+
+#addMemberModal .modal-backdrop {
+    z-index: 1999 !important;
+}
+
+#addMemberModal .modal-dialog {
+    z-index: 2001 !important;
+}
